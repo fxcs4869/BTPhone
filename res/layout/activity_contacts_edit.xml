@@ -1,0 +1,35 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <EditText
+        android:id="@+id/name"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:text="name"
+        android:textSize="30sp" />
+
+    <EditText
+        android:id="@+id/number"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:text="number"
+        android:textSize="30sp" />
+
+    <Button
+        android:id="@+id/comfirm"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="comfirm"
+        android:textSize="20sp" />
+
+    <Button
+        android:id="@+id/concle"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="concle"
+        android:textSize="20sp" />
+
+</LinearLayout>

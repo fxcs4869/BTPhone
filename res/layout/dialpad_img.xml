@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.example.btphone.ButtonGridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:dialpad="http://schemas.android.com/apk/res/com.example.btphone"
+    android:id="@+id/dialpad"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center|top"
+    dialpad:columns="3"
+    dialpad:rows="4" 
+     android:background="#011659">
+
+    <ImageView
+        android:id="@+id/one"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_one"
+        android:paddingLeft="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_1" />
+
+    <ImageView
+        android:id="@+id/two"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_two"
+        android:paddingLeft="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_2" />
+
+    <ImageView
+        android:id="@+id/three"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_three"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_3" />
+
+    <ImageView
+        android:id="@+id/four"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_four"
+        android:paddingLeft="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_4" />
+
+    <ImageView
+        android:id="@+id/five"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_five"
+        android:paddingLeft="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_5" />
+
+    <ImageView
+        android:id="@+id/six"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_six"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_6" />
+
+    <ImageView
+        android:id="@+id/seven"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_seven"
+        android:paddingLeft="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_7" />
+
+    <ImageView
+        android:id="@+id/eight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_eight"
+        android:paddingLeft="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_8" />
+
+    <ImageView
+        android:id="@+id/nine"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_nine"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_9" />
+
+    <ImageView
+        android:id="@+id/star"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_star"
+        android:paddingLeft="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_star" />
+
+    <ImageView
+        android:id="@+id/zero"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_zero"
+        android:paddingLeft="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_0" />
+
+    <ImageView
+        android:id="@+id/pound"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/description_image_button_pound"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:paddingTop="4dp"
+        android:soundEffectsEnabled="true"
+        android:src="@drawable/icar_pound" />
+
+</com.example.btphone.ButtonGridLayout>

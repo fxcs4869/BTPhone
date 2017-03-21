@@ -1,0 +1,188 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" 
+    android:background="#000000">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/callBar"
+        android:orientation="horizontal" >
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:gravity="center_vertical"
+            android:orientation="vertical" >
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="130dp"
+                android:layout_marginRight="50dp"
+                android:src="@drawable/icon_phone_big" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" >
+
+            <LinearLayout
+                android:id="@+id/phoneInfo"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:orientation="vertical" >
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center" >
+
+                    <TextView
+                        android:id="@+id/callName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="13632698823"
+                        android:textColor="@color/white"
+                        android:textSize="40sp" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="fill_parent"
+                    android:layout_height="2dp"
+                    android:layout_marginLeft="20dp"
+                    android:background="@drawable/icar_in_call_person_info_line_04" />
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="horizontal" >
+
+                    <TextView
+                        android:id="@+id/callType"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
+                        android:text="手机"
+                        android:textColor="@color/white"
+                        android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/callNumber"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="10000"
+                        android:textColor="@color/white"
+                        android:textSize="50sp" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="fill_parent"
+                    android:layout_height="2dp"
+                    android:layout_marginLeft="20dp"
+                    android:background="@drawable/icar_in_call_person_info_line_02" />
+
+                <Chronometer
+                    android:id="@+id/chronometer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_weight="1"
+                    android:textColor="@color/snow"
+                    android:textSize="40sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/dialpad_img"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:background="@drawable/key_bj"
+                android:orientation="vertical"
+                android:visibility="gone" >
+
+                <EditText
+                    android:id="@+id/digits"
+                    android:layout_width="fill_parent"
+                    android:layout_height="70dp"
+                    android:layout_marginLeft="20dip"
+                    android:layout_marginRight="20dip"
+                    android:background="@null"
+                    android:completionThreshold="1"
+                    android:cursorVisible="false"
+                    android:freezesText="true"
+                    android:gravity="center"
+                    android:scrollHorizontally="true"
+                    android:singleLine="true"
+                    android:textColor="@color/white"
+                    android:textSize="40.0sp" />
+
+                
+                
+                <include layout="@layout/dialpad_img" /><!-- 键盘区 -->
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/callBar"
+        android:layout_width="fill_parent"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/bottom_bar_bg"
+        android:gravity="center"
+        android:orientation="horizontal" >
+
+        <ImageButton
+            android:id="@+id/callin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:background="@drawable/icar_answer_bg"
+            android:src="@drawable/icar_icon_call" >
+        </ImageButton>
+
+        <ImageButton
+            android:id="@+id/handup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:background="@drawable/icar_end_bg"
+            android:src="@drawable/icar_ic_in_call_touch_end" >
+        </ImageButton>
+
+        <ImageButton
+            android:id="@+id/callBtDevice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:background="@drawable/icar_button_bg"
+            
+            android:src="@drawable/icar_ic_in_call_touch_voice_switch" >
+        </ImageButton>
+        
+        <ImageButton
+            android:id="@+id/callBtPhone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:visibility="gone"
+            android:background="@drawable/icar_button_bg"
+            android:src="@drawable/icar_ic_in_call_touch_voice_switch2" >
+        </ImageButton>
+        
+        <ImageButton
+            android:id="@+id/callDial"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:background="@drawable/icar_button_bg"
+            android:src="@drawable/icar_ic_in_call_touch_dialpad"
+            android:visibility="gone" >
+        </ImageButton>
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">BtPhone</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_dial">DialActivity</string>
+    <string name="title_activity_setting">SettingActivity</string>
+    <string name="title_activity_calllog">CalllogActivity</string>
+    <string name="title_activity_contacts">ContactsActivity</string>
+    <string name="title_activity_call">CallActivity</string>
+    <string name="title_activity_contact_view">ContactViewActivity</string>
+    <string name="title_activity_calllog_detail">CalllogDetailActivity</string>
+    <string name="title_activity_contacts_edit">ContactsEditActivity</string>
+    
+    
+    <string name="description_image_button_one">one</string>
+    <string name="description_image_button_two">two</string>
+    <string name="description_image_button_three">three</string>
+    <string name="description_image_button_four">four</string>
+    <string name="description_image_button_five">five</string>
+    <string name="description_image_button_six">six</string>
+    <string name="description_image_button_seven">seven</string>
+    <string name="description_image_button_eight">eight</string>
+    <string name="description_image_button_nine">nine</string>
+    <string name="description_image_button_star">star</string>
+    <string name="description_image_button_zero">zero</string>
+    <string name="description_image_button_pound">pound</string>
+
+</resources>

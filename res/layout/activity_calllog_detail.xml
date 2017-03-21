@@ -1,0 +1,66 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+   android:orientation="horizontal"
+    android:background="#000000" >
+
+    <ListView
+        android:id="@+id/each_caller_list"
+        android:layout_width="400dp"
+        android:layout_height="fill_parent"
+        android:cacheColorHint="@android:color/transparent"
+        android:fadingEdge="none"
+        android:minHeight="68dp"
+        android:scrollbars="none" />
+
+    <LinearLayout
+        android:layout_width="400dp"
+        android:layout_height="fill_parent"
+        android:background="@drawable/key_bj"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/call_name"
+            android:layout_width="343dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="29dp"
+            android:layout_marginTop="113dp"
+            android:ellipsize="marquee"
+            android:gravity="center"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:singleLine="true"
+            android:textColor="@color/white"
+            android:textSize="42.0sp"
+            android:textStyle="normal" />
+
+        <TextView
+            android:id="@+id/call_number"
+            android:layout_width="343dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="29dp"
+            android:layout_marginTop="40dp"
+            android:ellipsize="marquee"
+            android:gravity="center"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:singleLine="true"
+            android:textColor="@color/white"
+            android:textSize="30.0sp"
+            android:textStyle="normal" />
+
+        <TextView
+            android:id="@+id/phone_attr"
+            android:layout_width="343dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="29dp"
+            android:layout_marginTop="20dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="30.0sp"
+            android:textStyle="normal" />
+
+
+    </LinearLayout>
+
+</LinearLayout>

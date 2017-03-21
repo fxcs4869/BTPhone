@@ -1,0 +1,68 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:id="@+id/back"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="back" />
+
+    <CheckBox
+        android:id="@+id/isupdate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checked="false"
+        android:text="更新联系人" />
+"
+
+    <LinearLayout
+        android:id="@+id/search_bar"
+        android:layout_width="720dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/zsearch_bar_bg"
+        android:gravity="center|left"
+        android:orientation="horizontal"
+        android:paddingLeft="22dp" >
+
+        <EditText
+            android:id="@+id/search_src_text"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_marginRight="10dp"
+            android:layout_weight="1.0"
+            android:background="@drawable/zsearch_bar_input_bg"
+            android:ellipsize="end"
+            android:freezesText="true"
+            android:hint="搜索联系人"
+            android:imeOptions="actionDone"
+            android:inputType="textNoSuggestions"
+            android:paddingLeft="60dp"
+            android:singleLine="true" />
+
+        <ImageButton
+            android:id="@+id/download_contact"
+            android:layout_width="73dp"
+            android:layout_height="51dp"
+            android:layout_marginRight="10dp"
+            android:layout_weight="0.0"
+            android:src="@drawable/icon_download" />
+
+        <ImageButton
+            android:id="@+id/add_contact"
+            android:layout_width="73dp"
+            android:layout_height="51dp"
+            android:layout_marginRight="10dp"
+            android:layout_weight="0.0"
+            android:src="@drawable/icon_add" />
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/listview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+    </ListView>
+
+</LinearLayout>
