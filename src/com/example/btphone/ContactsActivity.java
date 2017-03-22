@@ -166,7 +166,7 @@ public class ContactsActivity extends Activity {
 				for (int i = 0; i < numbers.length; i++) { // 将NfPbap类型转换为ContactInfo类型,这里同名但不同的号码视为不同的联系人，分开存放
 					// 这里的.getLastName()有得可以获取全名，有的只能获取姓，不知为何
 					ContactInfo newcontact = new ContactInfo(contact.getLastName() + contact.getMiddleName() + contact.getFirstName(), numbers[i]);
-					if (newcontact.getName().length() == 0) { // 如果名字为空，退出
+					if (newcontact.getName(). length() == 0) { // 如果名字为空，退出
 						return;
 					}
 					if (phonebookdb != null) {

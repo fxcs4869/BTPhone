@@ -30,11 +30,13 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.btphone.adpter.DialerListAdapter;
 import com.example.btphone.bean.ContactInfo;
 import com.example.btphone.db.BtPhoneDB;
-  //蓝牙电话的主界面
+
+//蓝牙电话的主界面
 public class DialActivity extends Activity {
 	private static String TAG = "DialActivity";
 	private Button button_num1;
@@ -57,8 +59,8 @@ public class DialActivity extends Activity {
 	private Button settings;
 	private TextView num_field;
 	private String input_num = "";
-	public static final int MSG_COMMING = 4;
-	public static final int MSG_OUTGONG = 5;
+	public static final int MSG_INCOMING = 4;
+	public static final int MSG_OUTGOING = 5;
 
 	private String number; // 自定义的string 代表打入打出的号码
 	public static final int MSG_HFP_CONNECTED = 1;
@@ -101,7 +103,7 @@ public class DialActivity extends Activity {
 	@Override
 	protected void onResume() {
 		Log.e(TAG, "++ onResume()++");
-		handler.sendEmptyMessageDelayed(MSG_START_QUERY, 500);
+		handler.sendEmptyMessageDelayed(MSG_START_QUERY, 500); // 从数据库中查询
 		super.onResume();
 	}
 
@@ -115,7 +117,7 @@ public class DialActivity extends Activity {
 		public void handleMessage(Message msg) {
 			Bundle b = msg.getData();
 			switch (msg.what) {
-			case MSG_HFP_CONNECTED: {  //hfp连接
+			case MSG_HFP_CONNECTED: { // hfp连接
 				bHfpState = true;
 				button_contacts.setEnabled(false);
 			}
@@ -127,23 +129,23 @@ public class DialActivity extends Activity {
 			case HANDLER_EVENT_UPDATE_INFO_INPUT:
 				num_field.setText(b.getString("INFO_INPUT"));
 				break;
-			case MSG_OUTGONG: // 电话打出
+			case MSG_OUTGOING: // 电话打出
 				number = (String) msg.obj;
-				Log.v(TAG, "number=" + number);
+				Log.v(TAG, "case MSG_OUTGOING");
 				Intent intent = new Intent(DialActivity.this, CallActivity.class);
 				intent.putExtra("number", number);
 				intent.putExtra("type", false);// 电话类型 false 为去电
-				startActivityForResult(intent, 100);
+				startActivity(intent);
 				break;
-			case MSG_COMMING: // 打入
-				Log.v(TAG, "MSG_COMMING");
+			case MSG_INCOMING: // 打入
+				Log.v(TAG, "case MSG_COMMING");
 				number = (String) msg.obj;
 				Intent intent2 = new Intent(DialActivity.this, CallActivity.class);
 				intent2.putExtra("number", number);
 				intent2.putExtra("type", true); // 电话类型 true 为来电
-				startActivityForResult(intent2, 100);
+				startActivity(intent2);
 				break;
-			case MSG_START_QUERY:   //开始查询
+			case MSG_START_QUERY: // 开始查询
 				phonebookdb = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);
 
 				// if not exsit then create the table
@@ -253,7 +255,9 @@ public class DialActivity extends Activity {
 			public void onClick(View v) {
 				Log.v(TAG, "button_dial onClicked");
 				try {
-					phonebluth.reqHfpDialCall(input_num);
+					if (input_num.length() > 0) {  //输入号码长度必须大于零
+						phonebluth.reqHfpDialCall(input_num);
+					}
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -269,7 +273,7 @@ public class DialActivity extends Activity {
 				if (input_num.length() < 15 && input_num.length() > 0) {
 					input_num = input_num.substring(0, input_num.length() - 1);
 				}
-				updateInputNumber(); //更新输入的号码
+				updateInputNumber(); // 更新输入的号码
 				// }
 			}
 		});
@@ -323,7 +327,7 @@ public class DialActivity extends Activity {
 					@Override
 					public void afterTextChanged(Editable s) {
 						// TODO Auto-generated method stub
-						
+
 						String content = num_field.getText().toString();
 						Log.v(TAG, "afterTextChanged(Editable s)  content=" + content);
 						if (content.length() > 0) {
@@ -357,22 +361,21 @@ public class DialActivity extends Activity {
 
 					}
 				});
-		
-		lvDialerTiplist.setOnItemClickListener(new OnItemClickListener(){
+
+		lvDialerTiplist.setOnItemClickListener(new OnItemClickListener() {
 
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				// TODO Auto-generated method stub
-				ContactInfo contactInfo=ciList.get(position);
-				Intent intent=new Intent(mContext,ContactViewActivity.class);
+				ContactInfo contactInfo = ciList.get(position);
+				Intent intent = new Intent(mContext, ContactViewActivity.class);
 				intent.putExtra("name", contactInfo.getName());
-				intent.putExtra( "number", contactInfo.getPhoneNum());
+				intent.putExtra("number", contactInfo.getPhoneNum());
 				startActivity(intent);
 			}
-			
+
 		});
-			
-		
+
 	}
 
 	/**
@@ -399,7 +402,7 @@ public class DialActivity extends Activity {
 	}
 
 	private void NumClick(String input) {
-		Log.v(TAG, ""+"input "+" onClicked");
+		Log.v(TAG, "" + "input " + " onClicked");
 		// if (hfp_state == NfDef.STATE_CONNECTED) {
 		if (input_num.length() < 15) {
 			Log.v(TAG, "input=" + input);
@@ -428,8 +431,8 @@ public class DialActivity extends Activity {
 
 	private void sendHandlerMessage(int what, String[] keys, String[] values) {
 		Log.v(TAG, "keys.length=" + keys.length + "values.length=" + values.length);
-
-		Message msg = Message.obtain(handler, what);
+		Message msg = Message.obtain(handler, what);// ? 或者也可以写为Message msg =
+													// handler.obtainMessage();
 		if (keys != null && values != null) {
 			Bundle b = new Bundle();
 			for (int i = 0; i < keys.length; i++) {
@@ -510,7 +513,7 @@ public class DialActivity extends Activity {
 				ciList.addAll(btPhoneList);
 				mAllContactsList.addAll(btPhoneList);
 			}
-			
+
 			String content = num_field.getText().toString();
 			Log.v(TAG, "afterTextChanged(Editable s)  content=" + content);
 			if (content.length() > 0) {
@@ -539,8 +542,7 @@ public class DialActivity extends Activity {
 			}
 
 			lvDialerTiplist.setSelection(0);
-			
-			
+
 			Log.d(TAG, "onQueryComplete():alist.size=" + ciList.size());
 			// MyApplication ma = (MyApplication) getApplication();
 			// ma.setContactInfo(ciList);

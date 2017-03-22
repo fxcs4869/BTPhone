@@ -7,24 +7,13 @@ import java.util.HashMap;
 
 import com.example.btphone.db.BtPhoneDB;
 import com.example.btphone.util.PhoneBluth;
-import com.nforetek.bt.aidl.UiCommand;
-import com.nforetek.bt.res.NfDef;
 
 import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.ServiceConnection;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
-import android.os.RemoteException;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.TextUtils;
@@ -32,20 +21,16 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class CallActivity extends Activity implements OnClickListener {
 	private static String TAG = "CallActivity";
-	private Handler mHandler = null;
 	PhoneBluth phonebluth = null;
 	private TextView tvNumber;
-	private TextView tvType;
 	private TextView tvName;
 	private Chronometer chronomter;
 	private ImageButton btnHandup;
@@ -58,29 +43,17 @@ public class CallActivity extends Activity implements OnClickListener {
 	private EditText mDtmDigits = null;
 
 	private String number;
-	private int time;
 	private boolean bCAllIn = false; // 电话类型，只有2种，来电和去电，用boolean表示（不同于通话类型）
-	private CallStatus bStatus;
-	private boolean mIsInPhone = false;
 	private boolean mVoideIndevice = false;
 
-	private enum CallStatus {
-		CALL_DEFUALT, CALL_STANDY, CALL_REVERSE, CALL_TALKING // 默认、待机、倒车、通话
-	}
-
-	private boolean soundInRemote = true;
-	private boolean isConnect = false;
 	private boolean isTaking = false; // 是否处于通话中
 	private boolean isFinish = false;
-	private boolean mMainActivityFinish = false;
 	private boolean hangUp = false;
-	private int callType = 5; // 通话类型 未接5 来电6 去电7 只用于通话记录
-	private int nowSoundStatus = 0;
+	private int callType = 5; // 通话类型 未接5 来电6 去电7 只用于通话记录（不同与电话类型）
 	private SQLiteDatabase CallLogdb;
 	private SQLiteDatabase mDbDataBase;
 	// private String name;
 	private String peoplename;
-	private boolean touchHangUp = false;
 	private boolean touchCallIn = false;
 	private boolean mShowCallDial = false;
 	private boolean havaChangeSound = false;
@@ -144,13 +117,8 @@ public class CallActivity extends Activity implements OnClickListener {
 		Log.e(TAG, "+++ ON CREATE +++");
 		Intent intent = getIntent();
 		Bundle bundle = intent.getExtras();
-
 		number = bundle.getString("number"); // 通话号码
-		time = bundle.getInt("time"); // 通话时间
 		bCAllIn = bundle.getBoolean("type"); // 类型
-		bStatus = CallStatus.CALL_TALKING;
-		// bStatus = CallStatus.valueOf(bundle.getString("status")); // 通话状态
-		mIsInPhone = bundle.getBoolean("main"); // ？？
 
 		/**********
 		 * mVoideIndevice = bundle.getBoolean("voide");// ？？
@@ -158,29 +126,6 @@ public class CallActivity extends Activity implements OnClickListener {
 		 * **********/
 		mVoideIndevice = true;
 
-		/*
-		 * if (bStatus != null) { // 如果通话状态不为空 if
-		 * (bStatus.equals(CallStatus.CALL_TALKING)) { // 如果状态为 在通话中
-		 * soundInRemote = true; isConnect = true; isTaking = true; } else if
-		 * (bStatus.equals(CallStatus.CALL_REVERSE))// 如果状态为 倒车 { soundInRemote
-		 * = false; } isFinish = false;// ？？ mMainActivityFinish =
-		 * !bundle.getBoolean("finishMainActivity", true); // ？？ }
-		 */
-		if (TextUtils.isEmpty(number)) {
-			// finishThisActivity(true);
-		}
-		/*
-		 * if (!bCAllIn) { Context c = null; try { c =
-		 * getApplicationContext().createPackageContext("com.wedesign.phone",
-		 * Context.CONTEXT_IGNORE_SECURITY);
-		 * 
-		 * } catch (NameNotFoundException e) { // TODO Auto-generated catch
-		 * block e.printStackTrace(); } SharedPreferences sh =
-		 * c.getSharedPreferences("com.wedesign.phone",
-		 * Context.MODE_WORLD_READABLE | Context.MODE_MULTI_PROCESS); Editor
-		 * editor = sh.edit(); editor.putString("lastnumber", number);
-		 * editor.commit(); }
-		 */
 		phonebluth = PhoneBluth.getInstance(getApplicationContext());
 		initView();
 
@@ -190,7 +135,6 @@ public class CallActivity extends Activity implements OnClickListener {
 		} else { // 否则为来电
 			callType = 6;
 		}
-		nowSoundStatus = 0;
 		CallLogdb = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);
 		BtPhoneDB.createTable(CallLogdb, BtPhoneDB.Sql_create_calllog_tab); // 创建表
 		super.onCreate(savedInstanceState);
@@ -200,33 +144,31 @@ public class CallActivity extends Activity implements OnClickListener {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		Log.e(TAG,"++onResume()++");
-		Settings.System.putInt(getContentResolver(), "status_bar_disabled", 1); //这是啥？
-		touchHangUp = false;
+		Log.e(TAG, "++onResume()++");
+		Settings.System.putInt(getContentResolver(), "status_bar_disabled", 1); // 这是啥？
 		isFinish = false;
 	}
-	
+
 	@Override
 	protected void onPause() {
 		super.onPause();
-		Log.e(TAG,"++onPause()++");
+		Log.e(TAG, "++onPause()++");
 	}
-	
+
 	@Override
 	protected void onStop() {
 		super.onStop();
-		Log.e(TAG,"++onStop()++");
+		Log.e(TAG, "++onStop()++");
 	}
-	
-	protected void onDestroy(){
+
+	protected void onDestroy() {
 		super.onDestroy();
-		Log.e(TAG,"++onDestroy()++");
+		Log.e(TAG, "++onDestroy()++");
 	}
 
 	private void initView() {
 		Log.d(TAG, " initView()");
 		tvNumber = (TextView) findViewById(R.id.callNumber); // 号码
-		tvType = (TextView) findViewById(R.id.callType); // 类型
 		tvName = (TextView) findViewById(R.id.callName); // 姓名
 		chronomter = (Chronometer) findViewById(R.id.chronometer); // 计时器
 
@@ -247,7 +189,7 @@ public class CallActivity extends Activity implements OnClickListener {
 		btnBtPhone.setOnClickListener(this);
 		btnCallDial.setOnClickListener(this);
 		mDbDataBase = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);
-		mDtmDigits = (EditText) findViewById(R.id.digits); // ？
+		mDtmDigits = (EditText) findViewById(R.id.digits); // 显示键盘输入的内容
 		hand = handler;
 		// Log.e(TAG, " name="+name+" peoplename="+peoplename);
 		// peoplename = name;
@@ -271,7 +213,9 @@ public class CallActivity extends Activity implements OnClickListener {
 			btnCallDial.setVisibility(View.VISIBLE);
 		}
 		chronomter.setVisibility(View.VISIBLE);
-		chronomter.setBase(SystemClock.elapsedRealtime() - (time + 1) * 1000);
+		// chronomter.setBase(SystemClock.elapsedRealtime() - (time + 1) *
+		// 1000);
+		chronomter.setBase(SystemClock.elapsedRealtime() - 1000);// ?
 		chronomter.start();
 		if (isTaking) {
 
@@ -301,7 +245,6 @@ public class CallActivity extends Activity implements OnClickListener {
 		// TODO Auto-generated method stub
 		switch (v.getId()) {
 		case R.id.handup:
-			touchHangUp = true;
 			phonebluth.reqHfpTerminateCurrentCall(); // 结束当前通话
 			if (bCAllIn) { // 如果为来电
 				callType = 6;
@@ -315,13 +258,11 @@ public class CallActivity extends Activity implements OnClickListener {
 			break;
 		case R.id.callBtPhone: {
 			phonebluth.reqHfpAudioTransferToCarkit(); // 切换声道到车机
-			soundInRemote = true;
 		}
 			break;
 		case R.id.callBtDevice: {
 			Log.d(TAG, "callBtDevice clicked");
 			phonebluth.reqHfpAudioTransferToPhone(); // 切换声道到手机
-			soundInRemote = false;
 
 		}
 			break;
@@ -406,8 +347,6 @@ public class CallActivity extends Activity implements OnClickListener {
 				case MSG_HANGUP: { // 挂断
 					// hangUp = true;
 					// havaChangeSound = false;
-					nowSoundStatus = 0;
-					isConnect = false;
 					Log.v(TAG, "case MSG_HANGUP");
 					addCallLog();
 					finishThisActivity(true);
@@ -439,7 +378,6 @@ public class CallActivity extends Activity implements OnClickListener {
 						return;
 					}
 
-					nowSoundStatus = 2;
 				}
 					break;
 				case MSG_HFP_REMOTE: {
@@ -479,7 +417,8 @@ public class CallActivity extends Activity implements OnClickListener {
 			isFinish = true;
 			if (wantFinish) {
 				finish();
-				//System.exit(0); //408不能在蓝牙电话处于后台时电话结束后将CallActivity杀死，因此改为System.exit(0);
+				// System.exit(0);
+				// //408不能在蓝牙电话处于后台时电话结束后将CallActivity杀死，因此改为System.exit(0);
 			}
 		}
 	}

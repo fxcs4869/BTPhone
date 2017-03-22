@@ -74,7 +74,7 @@ public class PhoneBluth {
 	}
 
 	public void reqHfpDialCall(String number) { // 拨打电话
-		Log.d(TAG, "reqHfpDialCall");
+		Log.d(TAG, "reqHfpDialCall  number="+number);
 		if (mCommand == null) {
 			return;
 		}
@@ -176,7 +176,7 @@ public class PhoneBluth {
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 
-			case MSG_CURRENT_DEVICE_ADDR:
+			case MSG_CURRENT_DEVICE_ADDR:  
 				mCurrentConnectAddr = (String) msg.obj;
 				Log.d(TAG, "ADDR=" + mCurrentConnectAddr);
 				break;
@@ -337,11 +337,11 @@ public class PhoneBluth {
 			// call.getState() 去电3 接通0 挂断7 来电4
 			Handler handler1 = DialActivity.getHandler();
 			Handler handler2 = CallActivity.getHandler();
-			Log.d(TAG, "onHfpCallChanged()    call.getNumber()" + call.getNumber());
+			Log.d(TAG, "onHfpCallChanged()    call.getNumber()=" + call.getNumber());
 			switch (call.getState()) {
 			case 3: // 去电
 				if (handler1 != null) {
-					handler1.sendMessage(handler1.obtainMessage(DialActivity.MSG_OUTGONG, call.getNumber()));
+					handler1.sendMessage(handler1.obtainMessage(DialActivity.MSG_OUTGOING, call.getNumber()));
 				}
 				break;
 			case 7: // 挂断
@@ -353,9 +353,7 @@ public class PhoneBluth {
 			case 4: // 来电
 				if (handler1 != null) {
 					Log.d(TAG, "call.getNumber()=" + call.getNumber());
-					handler1.sendMessage(handler1.obtainMessage(DialActivity.MSG_COMMING, call.getNumber()));
-					// handler2.sendMessageDelayed(handler2.obtainMessage(CallActivity.MSG_COMMING,
-					// call.getNumber()), 1000);
+					handler1.sendMessage(handler1.obtainMessage(DialActivity.MSG_INCOMING, call.getNumber()));
 					Log.d(TAG, "(DialActivity.MSG_COMMING, call.getNumber()));");
 
 				}
