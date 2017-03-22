@@ -11,18 +11,15 @@ import com.example.btphone.util.PhoneBluth;
 import android.app.Activity;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
-import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Chronometer;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -40,26 +37,20 @@ public class CallActivity extends Activity implements OnClickListener {
 	private ImageButton btnCallDial;
 	private LinearLayout btnPhoneInfo;
 	private LinearLayout btnDialpad;
-	private EditText mDtmDigits = null;
+	private TextView mDtmDigits = null;
 
 	private String number;
-	private boolean bCAllIn = false; // 电话类型，只有2种，来电和去电，用boolean表示（不同于通话类型）
-	private boolean mVoideIndevice = false;
-
-	private boolean isTaking = false; // 是否处于通话中
+	private boolean isIncoming = false; // 是否是来电 true为来电
+										// false为去电，只用于拨接电话（不同于通话类型）
 	private boolean isFinish = false;
 	private boolean hangUp = false;
 	private int callType = 5; // 通话类型 未接5 来电6 去电7 只用于通话记录（不同与电话类型）
-	private SQLiteDatabase CallLogdb;
 	private SQLiteDatabase mDbDataBase;
-	// private String name;
 	private String peoplename;
 	private boolean touchCallIn = false;
 	private boolean mShowCallDial = false;
 	private boolean havaChangeSound = false;
 	private static final HashMap<Integer, Character> mDisplayMap = new HashMap<Integer, Character>();
-	private static final HashMap<Character, Integer> mDisplayDTMFMap = new HashMap<Character, Integer>();
-	private static final HashMap<Integer, Integer> mKeyCodeMap = new HashMap<Integer, Integer>();
 	private String mMTPData = null;
 	public static final int MSG_HANGUP = 3;
 	public static final int MSG_HFP_LOCAL = 4;
@@ -68,7 +59,6 @@ public class CallActivity extends Activity implements OnClickListener {
 	public static final int MSG_COMMING = 7;
 	public static final int MSG_TALKING = 8; // 接通
 	static {
-		// Map the buttons to the display characters 将按钮映射到显示字符
 		mDisplayMap.put(R.id.one, '1');
 		mDisplayMap.put(R.id.two, '2');
 		mDisplayMap.put(R.id.three, '3');
@@ -81,33 +71,6 @@ public class CallActivity extends Activity implements OnClickListener {
 		mDisplayMap.put(R.id.zero, '0');
 		mDisplayMap.put(R.id.pound, '#');
 		mDisplayMap.put(R.id.star, '*');
-
-		// Map the buttons to the display characters
-		mDisplayDTMFMap.put('1', ToneGenerator.TONE_DTMF_1);
-		mDisplayDTMFMap.put('2', ToneGenerator.TONE_DTMF_2);
-		mDisplayDTMFMap.put('3', ToneGenerator.TONE_DTMF_3);
-		mDisplayDTMFMap.put('4', ToneGenerator.TONE_DTMF_4);
-		mDisplayDTMFMap.put('5', ToneGenerator.TONE_DTMF_5);
-		mDisplayDTMFMap.put('6', ToneGenerator.TONE_DTMF_6);
-		mDisplayDTMFMap.put('7', ToneGenerator.TONE_DTMF_7);
-		mDisplayDTMFMap.put('8', ToneGenerator.TONE_DTMF_8);
-		mDisplayDTMFMap.put('9', ToneGenerator.TONE_DTMF_9);
-		mDisplayDTMFMap.put('0', ToneGenerator.TONE_DTMF_0);
-		mDisplayDTMFMap.put('#', ToneGenerator.TONE_DTMF_P);
-		mDisplayDTMFMap.put('*', ToneGenerator.TONE_DTMF_S);
-
-		mKeyCodeMap.put(R.id.one, KeyEvent.KEYCODE_1);
-		mKeyCodeMap.put(R.id.two, KeyEvent.KEYCODE_2);
-		mKeyCodeMap.put(R.id.three, KeyEvent.KEYCODE_3);
-		mKeyCodeMap.put(R.id.four, KeyEvent.KEYCODE_4);
-		mKeyCodeMap.put(R.id.five, KeyEvent.KEYCODE_5);
-		mKeyCodeMap.put(R.id.six, KeyEvent.KEYCODE_6);
-		mKeyCodeMap.put(R.id.seven, KeyEvent.KEYCODE_7);
-		mKeyCodeMap.put(R.id.eight, KeyEvent.KEYCODE_8);
-		mKeyCodeMap.put(R.id.nine, KeyEvent.KEYCODE_9);
-		mKeyCodeMap.put(R.id.zero, KeyEvent.KEYCODE_0);
-		mKeyCodeMap.put(R.id.pound, KeyEvent.KEYCODE_POUND);
-		mKeyCodeMap.put(R.id.star, KeyEvent.KEYCODE_STAR);
 	}
 
 	@Override
@@ -118,27 +81,9 @@ public class CallActivity extends Activity implements OnClickListener {
 		Intent intent = getIntent();
 		Bundle bundle = intent.getExtras();
 		number = bundle.getString("number"); // 通话号码
-		bCAllIn = bundle.getBoolean("type"); // 类型
-
-		/**********
-		 * mVoideIndevice = bundle.getBoolean("voide");// ？？
-		 * mVoideIndevice暂定为true
-		 * **********/
-		mVoideIndevice = true;
-
-		phonebluth = PhoneBluth.getInstance(getApplicationContext());
+		isIncoming = bundle.getBoolean("isIncoming"); // 类型
 		initView();
-
-		if (!bCAllIn) { // 如果电话类型为去电
-			Log.d(TAG, "number.length()= " + number.length());
-			callType = 7;
-		} else { // 否则为来电
-			callType = 6;
-		}
-		CallLogdb = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);
-		BtPhoneDB.createTable(CallLogdb, BtPhoneDB.Sql_create_calllog_tab); // 创建表
-		super.onCreate(savedInstanceState);
-
+		initData();
 	}
 
 	@Override
@@ -171,15 +116,13 @@ public class CallActivity extends Activity implements OnClickListener {
 		tvNumber = (TextView) findViewById(R.id.callNumber); // 号码
 		tvName = (TextView) findViewById(R.id.callName); // 姓名
 		chronomter = (Chronometer) findViewById(R.id.chronometer); // 计时器
-
 		chronomter.setVisibility(View.INVISIBLE); // 计时器设为不可见
-
 		btnCallin = (ImageButton) findViewById(R.id.callin); // 接听来电
 		btnHandup = (ImageButton) findViewById(R.id.handup); // 挂断
 		btnBtDevice = (ImageButton) findViewById(R.id.callBtDevice); // 车机声音
 		btnBtPhone = (ImageButton) findViewById(R.id.callBtPhone); // 手机声音
 		btnCallDial = (ImageButton) findViewById(R.id.callDial); // 电话取消
-
+		mDtmDigits = (TextView) findViewById(R.id.digits); // 显示键盘输入的内容
 		btnPhoneInfo = (LinearLayout) findViewById(R.id.phoneInfo);
 		btnDialpad = (LinearLayout) findViewById(R.id.dialpad_img);
 
@@ -188,20 +131,8 @@ public class CallActivity extends Activity implements OnClickListener {
 		btnBtDevice.setOnClickListener(this);
 		btnBtPhone.setOnClickListener(this);
 		btnCallDial.setOnClickListener(this);
-		mDbDataBase = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);
-		mDtmDigits = (EditText) findViewById(R.id.digits); // 显示键盘输入的内容
-		hand = handler;
-		// Log.e(TAG, " name="+name+" peoplename="+peoplename);
-		// peoplename = name;
 
-		if (TextUtils.isEmpty(peoplename)) {
-			try {
-				peoplename = BtPhoneDB.queryPhoneName(mDbDataBase, BtPhoneDB.PhoneBookTable, number);
-			} catch (Exception e) {
-				peoplename = number;
-			}
-		}
-		if (bCAllIn) { // 如果是来电
+		if (isIncoming) { // 如果是来电
 			btnCallin.setVisibility(View.VISIBLE);
 			btnHandup.setVisibility(View.VISIBLE);
 			btnCallDial.setVisibility(View.GONE);
@@ -209,35 +140,29 @@ public class CallActivity extends Activity implements OnClickListener {
 		} else { // 否则为去电
 			btnCallin.setVisibility(View.GONE);
 			btnHandup.setVisibility(View.VISIBLE);
-			Log.d(TAG, "btnCallDial.setVisibility(View.VISIBLE);");
 			btnCallDial.setVisibility(View.VISIBLE);
 		}
 		chronomter.setVisibility(View.VISIBLE);
-		// chronomter.setBase(SystemClock.elapsedRealtime() - (time + 1) *
-		// 1000);
+		// chronomter.setBase(SystemClock.elapsedRealtime() - (time + 1) *1000);
 		chronomter.setBase(SystemClock.elapsedRealtime() - 1000);// ?
 		chronomter.start();
-		if (isTaking) {
+		btnBtDevice.setVisibility(View.VISIBLE);
+		btnBtPhone.setVisibility(View.GONE);
 
-			btnCallin.setVisibility(View.GONE);
-			btnHandup.setVisibility(View.VISIBLE);
+	}
 
+	private void initData() {
+		hand = handler;
+		phonebluth = PhoneBluth.getInstance(getApplicationContext()); // 初始化phonebluth
+		mDbDataBase = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);// 创建数据库
+		BtPhoneDB.createTable(mDbDataBase, BtPhoneDB.Sql_create_calllog_tab); // 创建表
+		peoplename = BtPhoneDB.queryPhoneName(mDbDataBase, BtPhoneDB.PhoneBookTable, number);
+		if (peoplename == null) { // 如果数据库中没有存该联系人，联系人的名字就用号码表示
+			peoplename = number;
 		}
-
-		btnBtDevice.setVisibility(mVoideIndevice ? View.VISIBLE : View.GONE);
-		btnBtPhone.setVisibility(mVoideIndevice ? View.GONE : View.VISIBLE);
-
 		tvNumber.setText(number);
 		tvName.setText(peoplename);
-
-		// user
-		// service.sorceCtrl("requestSourceToMusic");
-
-		if ((!bCAllIn) || (isTaking)) {
-			// service.sorceCtrl("phoneBegin");
-			// service.phoneTransferBack();
-		}
-
+		callType = (isIncoming ? 6 : 7);// 如果电话类型为去电7,否则为来电6
 	}
 
 	@Override
@@ -246,7 +171,7 @@ public class CallActivity extends Activity implements OnClickListener {
 		switch (v.getId()) {
 		case R.id.handup:
 			phonebluth.reqHfpTerminateCurrentCall(); // 结束当前通话
-			if (bCAllIn) { // 如果为来电
+			if (isIncoming) { // 如果为来电
 				callType = 6;
 			}
 			break;
@@ -279,13 +204,14 @@ public class CallActivity extends Activity implements OnClickListener {
 		}
 			break;
 		default: {
-			phonebluth.reqHfpSendDtmf(mDisplayMap.get(v.getId()).toString());
-			if (mMTPData == null)
+			phonebluth.reqHfpSendDtmf(mDisplayMap.get(v.getId()).toString());// 根据按键输出DTMF
+			if (mMTPData == null)// 显示
+			{
 				mMTPData = "" + mDisplayMap.get(v.getId());
-			else
+			} else {
 				mMTPData = mMTPData + mDisplayMap.get(v.getId());
+			}
 			mDtmDigits.setText(mMTPData);
-			mDtmDigits.setSelection(mDtmDigits.getText().length());
 
 		}
 			break;
@@ -315,25 +241,6 @@ public class CallActivity extends Activity implements OnClickListener {
 			final Activity activity = mActivityReference.get();
 			if (activity != null) {
 				switch (msg.what) {
-				/*
-				 * case MSG_COMMING: number = (String) msg.obj;
-				 * 
-				 * try { peoplename = BtPhoneDB.queryPhoneName(mDbDataBase,
-				 * BtPhoneDatabase.PhoneBookTable, number); } catch (Exception
-				 * e) { peoplename = number; }
-				 * 
-				 * tvName.setText(peoplename); tvNumber.setText(number); break;
-				 */
-
-				/*
-				 * case MSG_TALKING: { Log.d(TAG, "MSG_TALKING");
-				 * chronomter.setBase(SystemClock.elapsedRealtime()); //
-				 * 从开机到现在的毫秒数（手机睡眠(sleep)的时间也包括在内）
-				 * chronomter.setVisibility(View.VISIBLE);// Chronometr是一个简单的定时器
-				 * chronomter.start(); btnCallin.setVisibility(View.GONE);
-				 * btnHandup.setVisibility(View.VISIBLE); Log.d(TAG,
-				 * "phoneBegin in MSG_TALKING"); } break;
-				 */
 				case MSG_TALKING: { // 接通
 					Log.v(TAG, "MSG_TALKING");
 					chronomter.setBase(SystemClock.elapsedRealtime()); // 从开机到现在的毫秒数（手机睡眠(sleep)的时间也包括在内）
@@ -345,8 +252,6 @@ public class CallActivity extends Activity implements OnClickListener {
 				}
 					break;
 				case MSG_HANGUP: { // 挂断
-					// hangUp = true;
-					// havaChangeSound = false;
 					Log.v(TAG, "case MSG_HANGUP");
 					addCallLog();
 					finishThisActivity(true);
@@ -356,7 +261,7 @@ public class CallActivity extends Activity implements OnClickListener {
 				case MSG_HFP_LOCAL: { // 车机音频到手机听筒
 					Log.d(TAG, "MSG_HFP_LOCAL  蓝牙车机到手机听筒");
 					handler.sendEmptyMessageDelayed(MSG_DEAL_DELAY, 100);
-					if ((bCAllIn) && (!havaChangeSound)) {
+					if ((isIncoming) && (!havaChangeSound)) {
 						if (touchCallIn) {
 							Log.d(TAG, "phonebluth.reqHfpAudioTransferToCarkit();");
 							touchCallIn = false;
@@ -383,7 +288,7 @@ public class CallActivity extends Activity implements OnClickListener {
 				case MSG_HFP_REMOTE: {
 					btnBtDevice.setVisibility(View.VISIBLE);
 					btnBtPhone.setVisibility(View.GONE);
-					if ((bCAllIn) && (!havaChangeSound)) {
+					if ((isIncoming) && (!havaChangeSound)) {
 						if (!touchCallIn) {
 							Log.d(TAG, "service.phoneTransfer();");
 							touchCallIn = false;
@@ -401,13 +306,13 @@ public class CallActivity extends Activity implements OnClickListener {
 
 	private void addCallLog() { // 添加这条通话记录到数据库
 		Log.d(TAG, "addCallLog()");
-		if (CallLogdb != null) {
+		if (mDbDataBase != null) {
 			Date nowTime = new Date(System.currentTimeMillis());
 			SimpleDateFormat sdFormatter = new SimpleDateFormat("yyyyMMddHHmmss");// System.currentTimeMillis()
 																					// 得到的是1970年以来的毫秒数
 			String retStrFormatNowDate = sdFormatter.format(nowTime);
 			Log.v(TAG, "peoplename=" + peoplename + "  number=" + number + " callType=" + callType + "date=" + retStrFormatNowDate);
-			BtPhoneDB.insert_calllog(CallLogdb, BtPhoneDB.CallLogTable, peoplename, number, callType, retStrFormatNowDate);
+			BtPhoneDB.insert_calllog(mDbDataBase, BtPhoneDB.CallLogTable, peoplename, number, callType, retStrFormatNowDate);
 		}
 	}
 

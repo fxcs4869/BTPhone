@@ -134,7 +134,7 @@ public class DialActivity extends Activity {
 				Log.v(TAG, "case MSG_OUTGOING");
 				Intent intent = new Intent(DialActivity.this, CallActivity.class);
 				intent.putExtra("number", number);
-				intent.putExtra("type", false);// 电话类型 false 为去电
+				intent.putExtra("isIncoming", false);// 电话类型 false 为去电
 				startActivity(intent);
 				break;
 			case MSG_INCOMING: // 打入
@@ -142,7 +142,7 @@ public class DialActivity extends Activity {
 				number = (String) msg.obj;
 				Intent intent2 = new Intent(DialActivity.this, CallActivity.class);
 				intent2.putExtra("number", number);
-				intent2.putExtra("type", true); // 电话类型 true 为来电
+				intent2.putExtra("isIncoming", true); // 电话类型 true 为来电
 				startActivity(intent2);
 				break;
 			case MSG_START_QUERY: // 开始查询
