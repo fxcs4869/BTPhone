@@ -44,6 +44,7 @@ public class CallActivity extends Activity implements OnClickListener {
 										// false为去电，只用于拨接电话（不同于通话类型）
 	private boolean isFinish = false;
 	private boolean hangUp = false;
+	private boolean isTaking = false; // 是否在通话过程中的标志位
 	private int callType = 5; // 通话类型 未接5 来电6 去电7 只用于通话记录（不同与电话类型）
 	private SQLiteDatabase mDbDataBase;
 	private String peoplename;
@@ -171,9 +172,6 @@ public class CallActivity extends Activity implements OnClickListener {
 		switch (v.getId()) {
 		case R.id.handup:
 			phonebluth.reqHfpTerminateCurrentCall(); // 结束当前通话
-			if (isIncoming) { // 如果为来电
-				callType = 6;
-			}
 			break;
 
 		case R.id.callin: {
@@ -212,7 +210,6 @@ public class CallActivity extends Activity implements OnClickListener {
 				mMTPData = mMTPData + mDisplayMap.get(v.getId());
 			}
 			mDtmDigits.setText(mMTPData);
-
 		}
 			break;
 		}
@@ -243,6 +240,7 @@ public class CallActivity extends Activity implements OnClickListener {
 				switch (msg.what) {
 				case MSG_TALKING: { // 接通
 					Log.v(TAG, "MSG_TALKING");
+					isTaking = true;// 标志位为true;
 					chronomter.setBase(SystemClock.elapsedRealtime()); // 从开机到现在的毫秒数（手机睡眠(sleep)的时间也包括在内）
 					chronomter.setVisibility(View.VISIBLE);// Chronometr是一个简单的定时器
 					chronomter.start();
@@ -253,6 +251,10 @@ public class CallActivity extends Activity implements OnClickListener {
 					break;
 				case MSG_HANGUP: { // 挂断
 					Log.v(TAG, "case MSG_HANGUP");
+					if (isIncoming) { // 如果为来电
+						callType = (isTaking ? 6 : 5);
+					}
+					isTaking = false;// 标志位为false;
 					addCallLog();
 					finishThisActivity(true);
 				}

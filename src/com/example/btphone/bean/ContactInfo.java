@@ -6,7 +6,6 @@ public class ContactInfo implements Comparable<ContactInfo> {
 	private Long id;
 	private String name;
 	private String phoneNum;
-	private boolean bBluetooth;
 	private boolean bCheck;
 	private boolean bIsletter;
 
@@ -45,13 +44,6 @@ public class ContactInfo implements Comparable<ContactInfo> {
 		this.phoneNum = phoneNum;
 	}
 
-	public boolean isbBluetooth() {
-		return bBluetooth;
-	}
-
-	public void setbBluetooth(boolean bBluetooth) {
-		this.bBluetooth = bBluetooth;
-	}
 
 	public boolean isbCheck() {
 		return bCheck;
@@ -94,7 +86,7 @@ public class ContactInfo implements Comparable<ContactInfo> {
 			return false;
 		ContactInfo other = (ContactInfo) obj;
 
-		if (this.id != other.id || this.bBluetooth != other.bBluetooth || this.bCheck != other.bCheck || this.bIsletter != other.bIsletter) {
+		if (this.id != other.id || this.bCheck != other.bCheck || this.bIsletter != other.bIsletter) {
 			return false;
 		}
 

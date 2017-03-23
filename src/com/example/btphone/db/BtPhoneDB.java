@@ -16,16 +16,17 @@ public class BtPhoneDB {
 	public static String Sql_create_calllog_tab = "create table if not exists calllog(_id integer primary key autoincrement,phonename text,phonenumber text,calltype integer,time text)";
 	public static String PhoneBookTable = "phonebook";
 	public static String CallLogTable = "calllog";
-    private static String TAG="BtPhoneDB";
-	public static SQLiteDatabase getPhoneBookDb(String addr) { // 
+	private static String TAG = "BtPhoneDB";
+
+	public static SQLiteDatabase getPhoneBookDb(String addr) { //
 		String path = mDbPath + "_" + addr + ".db";
-		
+
 		Log.d(TAG, "path=" + path);
 		SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(path, null);
 		return db;
 	}
 
-	public static void createTable(SQLiteDatabase db, String Sql_table_name) { // 
+	public static void createTable(SQLiteDatabase db, String Sql_table_name) { //
 		// ִ��SQL���
 		db.execSQL(Sql_table_name);
 	}
@@ -45,7 +46,7 @@ public class BtPhoneDB {
 		ContentValues cValue = new ContentValues();
 		cValue.put("phonename", Phone_name);
 		cValue.put("phonenumber", Phone_num);
-		db.insert(Table_name, null, cValue); //为什么这里要先插入
+		db.insert(Table_name, null, cValue); // 为什么这里要先插入
 
 		// 修改条件
 		String whereClause = "phonename=? and phonenumber=?";
@@ -129,12 +130,12 @@ public class BtPhoneDB {
 	 * @Throws
 	 */
 	// 查询所有电话联系人
-
 	public static ArrayList<ContactInfo> queryAllPhoneName(SQLiteDatabase db, String Table_name) {
 		ArrayList<ContactInfo> dataList = new ArrayList<ContactInfo>();
 		Log.d(TAG, "" + (db == null));
-		if (db == null)
+		if (db == null) {
 			return null;
+		}
 		Cursor cursor = db.query("phonebook", new String[] { "phonename", "phonenumber" }, "", new String[] {}, null, null, null); // "ORDEY BY ASC"
 
 		int count = cursor.getCount();
@@ -143,7 +144,6 @@ public class BtPhoneDB {
 			ContactInfo info = new ContactInfo();
 			info.setName(cursor.getString(cursor.getColumnIndex("phonename")));
 			info.setPhoneNum(cursor.getString(cursor.getColumnIndex("phonenumber")));
-			info.setbBluetooth(true);
 			dataList.add(info);
 		}
 		return dataList;

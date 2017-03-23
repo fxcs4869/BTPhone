@@ -337,7 +337,7 @@ public class PhoneBluth {
 			// call.getState() 去电3 接通0 挂断7 来电4
 			Handler handler1 = DialActivity.getHandler();
 			Handler handler2 = CallActivity.getHandler();
-			Log.d(TAG, "onHfpCallChanged()    call.getNumber()=" + call.getNumber());
+			Log.d(TAG, "onHfpCallChanged()    call.getState()=" + call.getState());
 			switch (call.getState()) {
 			case 3: // 去电
 				if (handler1 != null) {

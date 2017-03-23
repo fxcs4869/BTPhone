@@ -76,7 +76,7 @@ public class DialActivity extends Activity {
 			ContactsContract.CommonDataKinds.Phone.CONTACT_ID, ContactsContract.CommonDataKinds.Phone.PHOTO_ID, ContactsContract.CommonDataKinds.Phone.LOOKUP_KEY };
 	private List<NfHfpClientCall> mCallList;
 	private PhoneBluth phonebluth = null;
-	private ArrayList<ContactInfo> ciList = new ArrayList<ContactInfo>();
+	private ArrayList<ContactInfo> showContactsList = new ArrayList<ContactInfo>(); // 在ListView显示的联系人列表
 	private ArrayList<ContactInfo> phoneList = new ArrayList<ContactInfo>();
 	private ArrayList<ContactInfo> btPhoneList = new ArrayList<ContactInfo>();
 	private ArrayList<ContactInfo> mAllContactsList = new ArrayList<ContactInfo>();
@@ -255,7 +255,7 @@ public class DialActivity extends Activity {
 			public void onClick(View v) {
 				Log.v(TAG, "button_dial onClicked");
 				try {
-					if (input_num.length() > 0) {  //输入号码长度必须大于零
+					if (input_num.length() > 0) { // 输入号码长度必须大于零
 						phonebluth.reqHfpDialCall(input_num);
 					}
 				} catch (Exception e) {
@@ -304,11 +304,10 @@ public class DialActivity extends Activity {
 						startActivity(intent);
 					}
 				});
-		settings.setOnClickListener(new OnClickListener() { // 进入设置界面
+		settings.setOnClickListener(new OnClickListener() { // 进入设置界面(暂时关闭)
 			@Override
 			public void onClick(View v) {
 				Log.v(TAG, "button_setting onClicked");
-				finish();
 			}
 		});
 
@@ -329,15 +328,15 @@ public class DialActivity extends Activity {
 						// TODO Auto-generated method stub
 
 						String content = num_field.getText().toString();
-						Log.v(TAG, "afterTextChanged(Editable s)  content=" + content);
+						Log.d(TAG, "afterTextChanged(Editable s)  content=" + content);
 						if (content.length() > 0) {
 							ArrayList<ContactInfo> fileterList = (ArrayList<ContactInfo>) search(content);
 							Log.v(TAG, "fileterList.size()=" + fileterList.size());
-							ciList = fileterList;
-							for (ContactInfo cilist : ciList) {
-								Log.v(TAG, "cilist.getPhoneNum()=" + cilist.getPhoneNum());
+							showContactsList = fileterList;
+							for (ContactInfo showcontacts : showContactsList) {
+								Log.v(TAG, "showcontacts.getPhoneNum()=" + showcontacts.getPhoneNum());
 							}
-							if (ciList.size() > 0) {
+							if (showContactsList.size() > 0) {
 								lvDialerTiplist.setVisibility(View.VISIBLE);
 								// tvNewContact.setVisibility(View.GONE);
 								// tvUpdateContact.setVisibility(View.GONE);
@@ -347,18 +346,13 @@ public class DialActivity extends Activity {
 								// tvUpdateContact.setVisibility(View.VISIBLE);
 							}
 							updataAdapter();
-							// mAdapter.updateData(mContacts);
 						} else {
 							lvDialerTiplist.setVisibility(View.GONE);
 							// tvNewContact.setVisibility(View.GONE);
 							// tvUpdateContact.setVisibility(View.GONE);
 
-							ciList = mAllContactsList;
-							updataAdapter();
 						}
-
 						lvDialerTiplist.setSelection(0);
-
 					}
 				});
 
@@ -367,15 +361,13 @@ public class DialActivity extends Activity {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				// TODO Auto-generated method stub
-				ContactInfo contactInfo = ciList.get(position);
+				ContactInfo contactInfo = showContactsList.get(position);
 				Intent intent = new Intent(mContext, ContactViewActivity.class);
 				intent.putExtra("name", contactInfo.getName());
 				intent.putExtra("number", contactInfo.getPhoneNum());
 				startActivity(intent);
 			}
-
 		});
-
 	}
 
 	/**
@@ -402,12 +394,9 @@ public class DialActivity extends Activity {
 	}
 
 	private void NumClick(String input) {
-		Log.v(TAG, "" + "input " + " onClicked");
-		// if (hfp_state == NfDef.STATE_CONNECTED) {
+		Log.d(TAG, "NumClick()   input=" + input);
 		if (input_num.length() < 15) {
-			Log.v(TAG, "input=" + input);
 			input_num += input;
-			Log.v(TAG, "NumClick()  updateInputNumber();  input_num=" + input_num);
 			updateInputNumber();
 		}
 
@@ -420,8 +409,6 @@ public class DialActivity extends Activity {
 				e.printStackTrace();
 			}
 		}
-
-		// }
 	}
 
 	private void updateInputNumber() {
@@ -483,7 +470,7 @@ public class DialActivity extends Activity {
 			// mActivity);
 			// mCursorInterface.initCursor(cursor, cookie != null);
 			Log.d(TAG, "onQueryComplete() !!!!!!!!!!!!!!!!!!!!!:");
-			if (cursor != null && cursor.getCount() > 0) {
+			if (cursor != null && cursor.getCount() > 0) {//getCount()返回游标中的行数rows
 				try {
 					cursor.moveToFirst();
 					for (int i = 0; i < cursor.getCount(); i++) {
@@ -498,19 +485,19 @@ public class DialActivity extends Activity {
 						if (contactInfo.getName() == null) {
 							contactInfo.setName(contactInfo.getPhoneNum());
 						}
-						phoneList.add(contactInfo);
+						phoneList.add(contactInfo); //asyncQueryhandler 查询得到的结果
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 
-			ciList.addAll(phoneList);
+			showContactsList.addAll(phoneList);
 			mAllContactsList.addAll(phoneList);
 			btPhoneList = BtPhoneDB.queryAllPhoneName(phonebookdb, BtPhoneDB.PhoneBookTable);
 			if (btPhoneList != null) {
 
-				ciList.addAll(btPhoneList);
+				showContactsList.addAll(btPhoneList);
 				mAllContactsList.addAll(btPhoneList);
 			}
 
@@ -519,11 +506,11 @@ public class DialActivity extends Activity {
 			if (content.length() > 0) {
 				ArrayList<ContactInfo> fileterList = (ArrayList<ContactInfo>) search(content);
 				Log.v(TAG, "fileterList.size()=" + fileterList.size());
-				ciList = fileterList;
-				for (ContactInfo cilist : ciList) {
+				showContactsList = fileterList;
+				for (ContactInfo cilist : showContactsList) {
 					Log.v(TAG, "cilist.getPhoneNum()=" + cilist.getPhoneNum());
 				}
-				if (ciList.size() > 0) {
+				if (showContactsList.size() > 0) {
 					lvDialerTiplist.setVisibility(View.VISIBLE);
 					// tvNewContact.setVisibility(View.GONE);
 					// tvUpdateContact.setVisibility(View.GONE);
@@ -538,12 +525,12 @@ public class DialActivity extends Activity {
 				// tvNewContact.setVisibility(View.GONE);
 				// tvUpdateContact.setVisibility(View.GONE);
 
-				ciList = mAllContactsList;
+				showContactsList = mAllContactsList;
 			}
 
 			lvDialerTiplist.setSelection(0);
 
-			Log.d(TAG, "onQueryComplete():alist.size=" + ciList.size());
+			Log.d(TAG, "onQueryComplete():alist.size=" + showContactsList.size());
 			// MyApplication ma = (MyApplication) getApplication();
 			// ma.setContactInfo(ciList);
 			updataAdapter();
@@ -564,7 +551,7 @@ public class DialActivity extends Activity {
 		if (mAdapter == null) {
 			mAdapter = new DialerListAdapter(mContext);
 		}
-		List<ContactInfo> ContactInfo = ciList;
+		List<ContactInfo> ContactInfo = showContactsList;
 		if (ContactInfo != null && ContactInfo.size() != 0) {
 			mAdapter.setData(ContactInfo);
 		}
