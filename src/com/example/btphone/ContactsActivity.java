@@ -15,14 +15,12 @@ import com.example.btphone.adpter.ContactsListAdapter;
 import com.example.btphone.bean.ContactInfo;
 import com.example.btphone.db.BtPhoneDB;
 import com.example.btphone.util.CharacterParser;
-import com.example.btphone.util.ContactsUtils;
 import com.example.btphone.util.MyApplication;
 import com.example.btphone.util.PhoneBluth;
 import com.example.btphone.util.PinyinComparator;
 import com.nforetek.bt.aidl.NfPbapContact;
 import com.nforetek.bt.res.NfDef;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
@@ -36,20 +34,15 @@ import android.os.Handler;
 import android.os.Message;
 import android.provider.ContactsContract;
 import android.text.Editable;
-import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
@@ -64,23 +57,22 @@ public class ContactsActivity extends Activity {
 	private ListView listview;
 	private EditText etSearch;
 	private ContactsActivity mCursorInterface;
-
-	private ArrayList<ContactInfo> ciList = new ArrayList<ContactInfo>(); // listview显示的list,会因输入的查询文本而变化
-	private ArrayList<ContactInfo> phoneList = new ArrayList<ContactInfo>();
-	private ArrayList<ContactInfo> btPhoneList = new ArrayList<ContactInfo>();
+	private ArrayList<ContactInfo> queryList = new ArrayList<ContactInfo>(); // listview显示的list,会因输入的查询文本而变化
 	private ArrayList<ContactInfo> mAllContactsList = new ArrayList<ContactInfo>();// 所有的联系人，一般不会变化
 	Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;// 管理联系人的电话的Uri
 	String[] projection = { ContactsContract.CommonDataKinds.Phone._ID, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.DATA1, "sort_key",
 			ContactsContract.CommonDataKinds.Phone.CONTACT_ID, ContactsContract.CommonDataKinds.Phone.PHOTO_ID, ContactsContract.CommonDataKinds.Phone.LOOKUP_KEY };
 	public static final int HANDLER_EVENT_DIAL = 5;// 在通讯录界面拨打电话
 	public static final int HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST = 10;// 下载一条联系人信息
-	public static final int HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE = 11; // 下载完成
+	public static final int HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_START = 11; // 下载开始
+	public static final int HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE = 12; // 下载完成
 	private ContactsListAdapter mAdapter;
 	private Context mContext;
 	private ContactQueryHandler asyncQueryHandler;
 	private PhoneBluth phonebluth = null;
 	public static JSONArray contactJsona = null; // ?
 	private boolean update = false; // 是否更新联系人的标志位
+	private boolean canQuery = true;// 能否进行查询的标志位
 	private SQLiteDatabase phonebookdb;
 	private PinyinComparator pinyinComparator; // 根据拼音来排列ListView里面的数据类
 	private CharacterParser characterParser; // 汉字转换为拼音的类
@@ -89,15 +81,15 @@ public class ContactsActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_contacts);
-		Log.e(TAG, "+++ ON CREATE +++" + PhoneBluth.mCurrentConnectAddr);
+		Log.e(TAG, "++onCreate()++");
 		mContext = this;
 		hand = mHandler;
-		initView();
 		pinyinComparator = new PinyinComparator(); // 新建拼音比较的类
 		characterParser = CharacterParser.getInstance();// 实例化汉字转换为拼音的类
 		phonebluth = PhoneBluth.getInstance(getApplicationContext());// 初始化PhoneBluth
 		phonebookdb = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr); // 创建数据库
 		BtPhoneDB.createTable(phonebookdb, BtPhoneDB.Sql_create_phonebook_tab); // 创建表
+		initView();
 		initData();// 初始化数据，用异步查询框架 asyncQueryHandler 从数据库中将联系人信息取出来
 	}
 
@@ -115,13 +107,13 @@ public class ContactsActivity extends Activity {
 	@Override
 	public synchronized void onPause() {
 		super.onPause();
-		Log.e(TAG, "- ON PAUSE -");
+		Log.e(TAG, "-onPause() -");
 	}
 
 	@Override
 	public void onStop() {
 		super.onStop();
-		Log.e(TAG, "-- ON STOP --");
+		Log.e(TAG, "--onStop()--");
 	}
 
 	@Override
@@ -132,13 +124,15 @@ public class ContactsActivity extends Activity {
 		}
 
 		mHandler = null;
-		Log.v(TAG, "--- ON DESTROY ---");
+		Log.v(TAG, "--onDestroy()--");
 		super.onDestroy();
 	}
 
 	// 初始化数据，用异步查询框架 asyncQueryHandler 从数据库中将联系人信息取出来
 	private void initData() {
 		Log.v(TAG, "initData()");
+		queryList.clear();
+		mAllContactsList.clear();
 		asyncQueryHandler = new ContactQueryHandler(getContentResolver(), ContactsActivity.this);
 		asyncQueryHandler.startQuery(0, null, uri, projection, null, null, "sort_key COLLATE LOCALIZED asc");
 	}
@@ -160,32 +154,41 @@ public class ContactsActivity extends Activity {
 					phonebluth.reqHfpDialCall(number);
 				}
 				break;
+
+			case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_START: // 下载联系人开始
+				Log.v(TAG, "case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_START");
+				queryList.clear();
+				mAllContactsList.clear();
+				canQuery = false;// 下载联系人时不能进行查询
+				etSearch.setText("");
+				BtPhoneDB.delete_table_data(phonebookdb, BtPhoneDB.PhoneBookTable); // 删除表数据
+				break;
+
 			case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST: // 每下载一条联系人信息
 				NfPbapContact contact = (NfPbapContact) bundle.get("DATA_VCARD");
 				String[] numbers = contact.getNumberArray();
 				for (int i = 0; i < numbers.length; i++) { // 将NfPbap类型转换为ContactInfo类型,这里同名但不同的号码视为不同的联系人，分开存放
 					// 这里的.getLastName()有得可以获取全名，有的只能获取姓，不知为何
 					ContactInfo newcontact = new ContactInfo(contact.getLastName() + contact.getMiddleName() + contact.getFirstName(), numbers[i]);
-					if (newcontact.getName(). length() == 0) { // 如果名字为空，退出
+					if (newcontact.getName().length() == 0) { // 如果名字为空，退出
 						return;
 					}
 					if (phonebookdb != null) {
 						BtPhoneDB.insert_phonebook(phonebookdb, "phonebook", newcontact.getName(), newcontact.getPhoneNum());
 					}
-					btPhoneList.add(newcontact);
-					ciList.add(newcontact);
 					mAllContactsList.add(newcontact);
-					Log.v(TAG, "name=" + newcontact.getName() + "  btPhoneList.length=" + btPhoneList.size());
+					Log.v(TAG, "name=" + newcontact.getName() );
 				}
 				break;
 			case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE: // 下载联系人结束，更新Adapter
-				Log.d(TAG, "HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE");
-				Collections.sort(ciList, pinyinComparator); // 第二个参数返回一个int型的值，就相当于一个标志，告诉sort方法按什么顺序来对list进行排序。
-				Collections.sort(mAllContactsList, pinyinComparator);
-
+				Log.v(TAG, "case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE");
+				canQuery = true;// 可以进行查询了
+				Collections.sort(mAllContactsList, pinyinComparator);// 第二个参数返回一个int型的值，就相当于一个标志，告诉sort方法按什么顺序来对list进行排序。
+				queryList.addAll(mAllContactsList);
 				MyApplication ma = (MyApplication) getApplication();
 				ma.setContactInfo(mAllContactsList);
 				updataAdapter();
+				break;
 			}
 		}
 	};
@@ -196,6 +199,7 @@ public class ContactsActivity extends Activity {
 		listview = (ListView) findViewById(R.id.listview);
 		back = (Button) findViewById(R.id.back);
 		cbCheckbox = (CheckBox) findViewById(R.id.isupdate);
+		etSearch = (EditText) findViewById(R.id.search_src_text);
 		listview.setOnItemClickListener(contactsClickListener); // 给listview注册监听器来触发点击事件
 
 		btnDownload = (ImageButton) findViewById(R.id.download_contact);
@@ -210,17 +214,9 @@ public class ContactsActivity extends Activity {
 						 * Toast.LENGTH_SHORT) .show(); return; }
 						 */
 						try {
-							Log.v(TAG, "List.clear()");
-							btPhoneList.clear();
-							ciList.clear();
-							mAllContactsList.clear();
-
-							BtPhoneDB.delete_table_data(phonebookdb, BtPhoneDB.PhoneBookTable); // 删除表数据
-							BtPhoneDB.createTable(phonebookdb, BtPhoneDB.Sql_create_phonebook_tab); // 创建表
 							phonebluth.reqPbapDownload(NfDef.PBAP_STORAGE_PHONE_MEMORY); // 开始下载
 						} catch (Exception e) {
 							e.printStackTrace();
-							// enableButton(true);
 						}
 					}
 
@@ -248,37 +244,33 @@ public class ContactsActivity extends Activity {
 					}
 				});
 
-		etSearch = (EditText) findViewById(R.id.search_src_text);
-
 		etSearch.addTextChangedListener(new TextWatcher() { // 搜索文本
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
 				// TODO Auto-generated method stub
-
 			}
 
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-				// TODO Auto-generated method stub
 
 			}
 
 			@Override
 			public void afterTextChanged(Editable s) { // 每当文本变更后
 				// TODO Auto-generated method stub
-				String content = etSearch.getText().toString();
-				if (content.length() > 0) { // 如果文本不为空
-					ArrayList<ContactInfo> fileterList = (ArrayList<ContactInfo>) search(content);
-					Log.v(TAG, "content=" + content + "  mAllContactsList.size()=" + mAllContactsList.size() + " fileterList.size()= " + fileterList.size());
-					ciList = fileterList;
+				if (canQuery) {
+					String content = etSearch.getText().toString();
+					if (content.length() > 0) { // 如果文本不为空
+						ArrayList<ContactInfo> fileterList = (ArrayList<ContactInfo>) search(content);
+						Log.v(TAG, "content=" + content + "  mAllContactsList.size()=" + mAllContactsList.size() + " fileterList.size()= " + fileterList.size());
+						queryList = fileterList;
+					} else { // 如果文本为空
+						queryList = mAllContactsList;
+					}
 					updataAdapter();
-				} else { // 如果文本为空
-					ciList = mAllContactsList;
-					updataAdapter();
+					listview.setSelection(0); // 将列表移动到指定的position
 				}
-				listview.setSelection(0); // 将列表移动到指定的position
-
 			}
 		});
 	}
@@ -324,18 +316,18 @@ public class ContactsActivity extends Activity {
 	private OnItemClickListener contactsClickListener = new OnItemClickListener() { // 点击通讯录的监听器
 		public void onItemClick(AdapterView<?> av, View v, int position, long id) {
 			if (update) { // 更新联系人
-				ContactInfo info = ciList.get(position);
+				ContactInfo info = queryList.get(position);
 				Intent intent = new Intent(ContactsActivity.this, ContactsEditActivity.class);
 				intent.putExtra("number", info.getPhoneNum());
 				intent.putExtra("name", info.getName());
 				intent.putExtra("update", update);
 				startActivityForResult(intent, 10);
 			} else { // 新建联系人
-				if (ciList.size() == 0) {
+				if (queryList.size() == 0) {
 					Toast.makeText(mContext, "contactList为空", Toast.LENGTH_LONG).show();
 					return;
 				}
-				ContactInfo info = ciList.get(position);
+				ContactInfo info = queryList.get(position);
 
 				Intent intent = new Intent(ContactsActivity.this, ContactViewActivity.class);
 				intent.putExtra("number", info.getPhoneNum());
@@ -347,7 +339,7 @@ public class ContactsActivity extends Activity {
 
 	private void updateJSON() {
 		contactJsona = new JSONArray();
-		for (ContactInfo info : ciList) {
+		for (ContactInfo info : queryList) {
 			JSONObject object = new JSONObject();
 			JSONArray array = new JSONArray();
 			JSONObject arrayObject = new JSONObject();
@@ -366,37 +358,16 @@ public class ContactsActivity extends Activity {
 
 	}
 
-	public void updataAdapter() {
-		// TODO Auto-generated method stub
+	private void updataAdapter() {
 		Log.v(TAG, "updataAdapter()");
 		if (mAdapter == null) {
 			mAdapter = new ContactsListAdapter(mContext, mHandler);
-			listview.setAdapter(mAdapter);
 		}
-		List<ContactInfo> ContactInfo = ciList;
-		updateJSON();
-		if (ContactInfo != null && ContactInfo.size() != 0) {
-			Log.v(TAG, "listview.setAdapter(mAdapter);");
-			mAdapter.setData(ContactInfo);
-			listview.setAdapter(mAdapter);
-		} else {
-			// Toast.makeText(mContext, "联系人信息为空啊大哥", Toast.LENGTH_LONG).show();
-		}
+		List<ContactInfo> ContactInfo = queryList;
+		// updateJSON();?
+		mAdapter.setData(ContactInfo);
+		listview.setAdapter(mAdapter);
 	}
-
-	/*
-	 * @Override protected void onActivityResult(int requestCode, int
-	 * resultCode, Intent data) { // TODO Auto-generated method stub if
-	 * (requestCode == 10) { if (resultCode == 1) { // etSearch.setText("");
-	 * ciList.clear(); ciList = BtPhoneDB.queryAllPhoneName(phonebookdb,
-	 * BtPhoneDB.PhoneBookTable); // mAllContactsList.clear(); //
-	 * mAllContactsList.addAll(ciList);
-	 * 
-	 * MyApplication ma = (MyApplication) getApplication();
-	 * ma.setContactInfo(ciList); updataAdapter(); } else if (resultCode == 2) {
-	 * this.finish(); } } super.onActivityResult(requestCode, resultCode, data);
-	 * }
-	 */
 
 	private class ContactQueryHandler extends AsyncQueryHandler { // 异步查询框架
 		// token,一个令牌，主要用来标识查询,保证唯一即可.需要跟onXXXComplete方法传入的一致。（当然你也可以不一致，同样在数据库的操作结束后会调用对应的onXXXComplete方法?）
@@ -414,75 +385,17 @@ public class ContactsActivity extends Activity {
 			mCursorInterface = cursorInterface;
 		}
 
-		public Cursor doQuery(Uri uri, String[] projection, String selection, String[] selectionArgs, String orderBy, boolean async) {
-			if (async) {
-				// Get 100 results first, which is enough to allow the user to
-				// start scrolling,
-				// while still being very fast.
-				Uri limituri = uri.buildUpon().appendQueryParameter("limit", "100").build();
-				QueryArgs args = new QueryArgs();
-				args.uri = uri;
-				args.projection = projection;
-				args.selection = selection;
-				args.selectionArgs = selectionArgs;
-				args.orderBy = orderBy;
-
-				startQuery(0, args, limituri, projection, selection, selectionArgs, orderBy);
-				return null;
-			}
-			return ContactsUtils.query(mCursorInterface, uri, projection, selection, selectionArgs, orderBy);
-		}
-
 		@Override
 		protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
-			// Log.i("@@@", "query complete: " + cursor.getCount() + "   " +
-			// mActivity);
-			// mCursorInterface.initCursor(cursor, cookie != null);
-
-			if (cursor != null && cursor.getCount() > 0) {
-				try {
-					cursor.moveToFirst();
-					for (int i = 0; i < cursor.getCount(); i++) {
-						cursor.moveToPosition(i);
-						String name = cursor.getString(1);
-						String number = cursor.getString(2);
-						long contactId = cursor.getLong(4);
-						ContactInfo contactInfo = new ContactInfo();
-						contactInfo.setId(contactId);
-						contactInfo.setPhoneNum(number);
-						contactInfo.setName(name);
-						if (contactInfo.getName() == null) {
-							contactInfo.setName(contactInfo.getPhoneNum());
-						}
-						phoneList.add(contactInfo);
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-
-			ciList.addAll(phoneList);
-
-			mAllContactsList.addAll(phoneList);
-			btPhoneList = BtPhoneDB.queryAllPhoneName(phonebookdb, BtPhoneDB.PhoneBookTable);
-			ciList.addAll(btPhoneList);
-			mAllContactsList.addAll(btPhoneList);
-
-			filledData(ciList);
+			mAllContactsList = BtPhoneDB.queryAllPhoneName(phonebookdb, BtPhoneDB.PhoneBookTable);
 			filledData(mAllContactsList);
-
 			// 根据a-z进行排序源数据
-			Collections.sort(ciList, pinyinComparator);
 			Collections.sort(mAllContactsList, pinyinComparator);
-
-			MyApplication ma = (MyApplication) getApplication();
-			ma.setContactInfo(ciList);
+			queryList = mAllContactsList;
+			MyApplication ma = (MyApplication) getApplication();// ?
+			ma.setContactInfo(queryList);
 			updataAdapter();
 
-			if (token == 0 && cookie != null && cursor != null && cursor.getCount() >= 100) {
-				QueryArgs args = (QueryArgs) cookie;
-				startQuery(1, null, args.uri, args.projection, args.selection, args.selectionArgs, args.orderBy);
-			}
 		}
 	}
 

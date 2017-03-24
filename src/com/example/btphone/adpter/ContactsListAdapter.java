@@ -76,28 +76,14 @@ public class ContactsListAdapter extends BaseAdapter {
 			holder.tvIndex = (TextView) view.findViewById(R.id.index);
 			holder.tvName = (TextView) view.findViewById(R.id.name);
 			holder.ivCall = (Button) view.findViewById(R.id.dial);
-			// holder.ivBtPhone = (ImageView)
-			// view.findViewById(R.id.bt_phone_token);
-
 			view.setTag(holder);
 		} else {
 			holder = (ViewHolder) view.getTag();
 		}
 		if (ContactInfoList != null & ContactInfoList.size() > 0) {// Ϊ��������±�Խ���쳣��bug��ӵ��ж�
 			final ContactInfo info = ContactInfoList.get(position);
-			holder.tvName.setText(info.getName());
 			holder.tvIndex.setText(position + 1 + ".");
-
-			/*
-			 * if (info.isbBluetooth()) { // 判断是否为蓝牙联系人
-			 * holder.ivBtPhone.setVisibility(View.VISIBLE); } else {
-			 * holder.ivBtPhone.setVisibility(View.INVISIBLE); }
-			 */
-			/*
-			 * if (bDeleteState) { holder.cbCheck.setVisibility(View.VISIBLE);
-			 * holder.cbCheck.setChecked(info.isbCheck()); } else {
-			 * holder.cbCheck.setVisibility(View.GONE); }
-			 */
+			holder.tvName.setText(info.getName());
 			holder.ivCall.setOnClickListener(new OnClickListener(){  //联系人列表的拨打电话
 				@Override
 				public void onClick(View v) {

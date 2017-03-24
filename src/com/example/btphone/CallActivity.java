@@ -19,6 +19,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -34,25 +35,20 @@ public class CallActivity extends Activity implements OnClickListener {
 	private ImageButton btnCallin;
 	private ImageButton btnBtDevice;
 	private ImageButton btnBtPhone;
-	private ImageButton btnCallDial;
-	private LinearLayout btnPhoneInfo;
-	private LinearLayout btnDialpad;
+	private ImageButton btnDialpad;
+	private LinearLayout phoneinfo_layout;
+	private LinearLayout dialpad_layout;
 	private TextView mDtmDigits = null;
-
 	private String number;
-	private boolean isIncoming = false; // 是否是来电 true为来电
-										// false为去电，只用于拨接电话（不同于通话类型）
-	private boolean isFinish = false;
+	private boolean isIncoming = false; // 是否是来电
 	private boolean hangUp = false;
 	private boolean isTaking = false; // 是否在通话过程中的标志位
+	private boolean mShowCallDial = false;// 是否显示了小键盘的标志位
 	private int callType = 5; // 通话类型 未接5 来电6 去电7 只用于通话记录（不同与电话类型）
 	private SQLiteDatabase mDbDataBase;
 	private String peoplename;
-	private boolean touchCallIn = false;
-	private boolean mShowCallDial = false;
-	private boolean havaChangeSound = false;
 	private static final HashMap<Integer, Character> mDisplayMap = new HashMap<Integer, Character>();
-	private String mMTPData = null;
+	private String mMTPData = null;// 小键盘显示的内容
 	public static final int MSG_HANGUP = 3;
 	public static final int MSG_HFP_LOCAL = 4;
 	public static final int MSG_HFP_REMOTE = 5;
@@ -82,7 +78,7 @@ public class CallActivity extends Activity implements OnClickListener {
 		Intent intent = getIntent();
 		Bundle bundle = intent.getExtras();
 		number = bundle.getString("number"); // 通话号码
-		isIncoming = bundle.getBoolean("isIncoming"); // 类型
+		isIncoming = bundle.getBoolean("isIncoming"); // 电话类型
 		initView();
 		initData();
 	}
@@ -92,7 +88,6 @@ public class CallActivity extends Activity implements OnClickListener {
 		super.onResume();
 		Log.e(TAG, "++onResume()++");
 		Settings.System.putInt(getContentResolver(), "status_bar_disabled", 1); // 这是啥？
-		isFinish = false;
 	}
 
 	@Override
@@ -117,35 +112,32 @@ public class CallActivity extends Activity implements OnClickListener {
 		tvNumber = (TextView) findViewById(R.id.callNumber); // 号码
 		tvName = (TextView) findViewById(R.id.callName); // 姓名
 		chronomter = (Chronometer) findViewById(R.id.chronometer); // 计时器
-		chronomter.setVisibility(View.INVISIBLE); // 计时器设为不可见
 		btnCallin = (ImageButton) findViewById(R.id.callin); // 接听来电
 		btnHandup = (ImageButton) findViewById(R.id.handup); // 挂断
 		btnBtDevice = (ImageButton) findViewById(R.id.callBtDevice); // 车机声音
 		btnBtPhone = (ImageButton) findViewById(R.id.callBtPhone); // 手机声音
-		btnCallDial = (ImageButton) findViewById(R.id.callDial); // 电话取消
+		btnDialpad = (ImageButton) findViewById(R.id.keyboard); // 打开小键盘
 		mDtmDigits = (TextView) findViewById(R.id.digits); // 显示键盘输入的内容
-		btnPhoneInfo = (LinearLayout) findViewById(R.id.phoneInfo);
-		btnDialpad = (LinearLayout) findViewById(R.id.dialpad_img);
+		phoneinfo_layout = (LinearLayout) findViewById(R.id.phoneInfo);
+		dialpad_layout = (LinearLayout) findViewById(R.id.dialpad_layout);
 
 		btnHandup.setOnClickListener(this);
 		btnCallin.setOnClickListener(this);
 		btnBtDevice.setOnClickListener(this);
 		btnBtPhone.setOnClickListener(this);
-		btnCallDial.setOnClickListener(this);
+		btnDialpad.setOnClickListener(this);
 
 		if (isIncoming) { // 如果是来电
 			btnCallin.setVisibility(View.VISIBLE);
 			btnHandup.setVisibility(View.VISIBLE);
-			btnCallDial.setVisibility(View.GONE);
+			btnDialpad.setVisibility(View.GONE);
 
 		} else { // 否则为去电
 			btnCallin.setVisibility(View.GONE);
 			btnHandup.setVisibility(View.VISIBLE);
-			btnCallDial.setVisibility(View.VISIBLE);
+			btnDialpad.setVisibility(View.VISIBLE);
 		}
-		chronomter.setVisibility(View.VISIBLE);
-		// chronomter.setBase(SystemClock.elapsedRealtime() - (time + 1) *1000);
-		chronomter.setBase(SystemClock.elapsedRealtime() - 1000);// ?
+		chronomter.setBase(SystemClock.elapsedRealtime());// ?
 		chronomter.start();
 		btnBtDevice.setVisibility(View.VISIBLE);
 		btnBtPhone.setVisibility(View.GONE);
@@ -175,7 +167,6 @@ public class CallActivity extends Activity implements OnClickListener {
 			break;
 
 		case R.id.callin: {
-			touchCallIn = true;
 			phonebluth.reqHfpAnswerCall(0); // 接听来电
 		}
 			break;
@@ -189,15 +180,15 @@ public class CallActivity extends Activity implements OnClickListener {
 
 		}
 			break;
-		case R.id.callDial: {
+		case R.id.keyboard: {// 开闭小键盘
 			mShowCallDial = mShowCallDial ? false : true;
 			if (mShowCallDial) {
-				btnPhoneInfo.setVisibility(View.GONE);
-				btnDialpad.setVisibility(View.VISIBLE);
-				setupKeypad();
+				phoneinfo_layout.setVisibility(View.GONE);
+				dialpad_layout.setVisibility(View.VISIBLE);
+				setupKeypad();// 初始化小键盘
 			} else {
-				btnPhoneInfo.setVisibility(View.VISIBLE);
-				btnDialpad.setVisibility(View.GONE);
+				phoneinfo_layout.setVisibility(View.VISIBLE);
+				dialpad_layout.setVisibility(View.GONE);
 			}
 		}
 			break;
@@ -238,18 +229,17 @@ public class CallActivity extends Activity implements OnClickListener {
 			final Activity activity = mActivityReference.get();
 			if (activity != null) {
 				switch (msg.what) {
-				case MSG_TALKING: { // 接通
+
+				case MSG_TALKING: // 接通
 					Log.v(TAG, "MSG_TALKING");
 					isTaking = true;// 标志位为true;
 					chronomter.setBase(SystemClock.elapsedRealtime()); // 从开机到现在的毫秒数（手机睡眠(sleep)的时间也包括在内）
-					chronomter.setVisibility(View.VISIBLE);// Chronometr是一个简单的定时器
 					chronomter.start();
 					btnCallin.setVisibility(View.GONE);
 					btnHandup.setVisibility(View.VISIBLE);
-					Log.v(TAG, "phoneBegin in MSG_TALKING");
-				}
 					break;
-				case MSG_HANGUP: { // 挂断
+
+				case MSG_HANGUP: // 挂断
 					Log.v(TAG, "case MSG_HANGUP");
 					if (isIncoming) { // 如果为来电
 						callType = (isTaking ? 6 : 5);
@@ -257,48 +247,16 @@ public class CallActivity extends Activity implements OnClickListener {
 					isTaking = false;// 标志位为false;
 					addCallLog();
 					finishThisActivity(true);
-				}
-
 					break;
-				case MSG_HFP_LOCAL: { // 车机音频到手机听筒
-					Log.d(TAG, "MSG_HFP_LOCAL  蓝牙车机到手机听筒");
-					handler.sendEmptyMessageDelayed(MSG_DEAL_DELAY, 100);
-					if ((isIncoming) && (!havaChangeSound)) {
-						if (touchCallIn) {
-							Log.d(TAG, "phonebluth.reqHfpAudioTransferToCarkit();");
-							touchCallIn = false;
-							phonebluth.reqHfpAudioTransferToPhone();
-						}
-					}
-					havaChangeSound = true;
 
-				}
+				case MSG_HFP_LOCAL: // 车机音频到手机听筒
+					btnBtDevice.setVisibility(View.GONE);
+					btnBtPhone.setVisibility(View.VISIBLE);
 					break;
-				case MSG_DEAL_DELAY: {
-					Log.d(TAG, "MSG_DEAL_DELAY");
-					if (!hangUp) {
-						Log.d(TAG, "btnBtPhone.setVisibility(View.VISIBLE);");
-						btnBtDevice.setVisibility(View.GONE);
-						btnBtPhone.setVisibility(View.VISIBLE);
-					} else {
-						finishThisActivity(true);
-						return;
-					}
 
-				}
-					break;
-				case MSG_HFP_REMOTE: {
+				case MSG_HFP_REMOTE:// 手机听筒到车机音频
 					btnBtDevice.setVisibility(View.VISIBLE);
 					btnBtPhone.setVisibility(View.GONE);
-					if ((isIncoming) && (!havaChangeSound)) {
-						if (!touchCallIn) {
-							Log.d(TAG, "service.phoneTransfer();");
-							touchCallIn = false;
-							phonebluth.reqHfpAudioTransferToCarkit();
-						}
-					}
-					havaChangeSound = true;
-				}
 					break;
 				}
 
@@ -309,9 +267,8 @@ public class CallActivity extends Activity implements OnClickListener {
 	private void addCallLog() { // 添加这条通话记录到数据库
 		Log.d(TAG, "addCallLog()");
 		if (mDbDataBase != null) {
-			Date nowTime = new Date(System.currentTimeMillis());
-			SimpleDateFormat sdFormatter = new SimpleDateFormat("yyyyMMddHHmmss");// System.currentTimeMillis()
-																					// 得到的是1970年以来的毫秒数
+			Date nowTime = new Date(System.currentTimeMillis());// 得到的是1970年以来的毫秒数
+			SimpleDateFormat sdFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
 			String retStrFormatNowDate = sdFormatter.format(nowTime);
 			Log.v(TAG, "peoplename=" + peoplename + "  number=" + number + " callType=" + callType + "date=" + retStrFormatNowDate);
 			BtPhoneDB.insert_calllog(mDbDataBase, BtPhoneDB.CallLogTable, peoplename, number, callType, retStrFormatNowDate);
@@ -319,28 +276,18 @@ public class CallActivity extends Activity implements OnClickListener {
 	}
 
 	private void finishThisActivity(boolean wantFinish) { // 结束activity的方法
-		Log.d(TAG, "finishThisActivity " + isFinish + "  1");
-		if (!isFinish) {
-			isFinish = true;
-			if (wantFinish) {
-				finish();
-				// System.exit(0);
-				// //408不能在蓝牙电话处于后台时电话结束后将CallActivity杀死，因此改为System.exit(0);
-			}
+		Log.d(TAG, "finishThisActivity ");
+		if (wantFinish) {
+			 finish();// ?不能在蓝牙电话处于后台时电话结束后将CallActivity杀死
 		}
 	}
 
-	private void setupKeypad() {
+	private void setupKeypad() { // 初始化小键盘
 		// for each view id listed in the displaymap
 		View button;
 		for (int viewId : mDisplayMap.keySet()) {
-			// locate the view
 			button = findViewById(viewId);
-			// Setup the listeners for the buttons
-			// button.setOnTouchListener(this);
 			button.setClickable(true);
-			// button.setOnKeyListener(this);
-			// button.setOnHoverListener(this);
 			button.setOnClickListener(this);
 		}
 	}

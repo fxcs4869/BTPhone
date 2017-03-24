@@ -148,7 +148,6 @@ containing a value of this type.
         public static final int callBar=0x7f090000;
         public static final int callBtDevice=0x7f090009;
         public static final int callBtPhone=0x7f09000a;
-        public static final int callDial=0x7f09000b;
         public static final int callName=0x7f090002;
         public static final int callNumber=0x7f090003;
         public static final int call_icon=0x7f090053;
@@ -166,7 +165,7 @@ containing a value of this type.
         public static final int dialanddelete=0x7f090023;
         public static final int dialer_tips_list=0x7f090021;
         public static final int dialpad=0x7f090058;
-        public static final int dialpad_img=0x7f090005;
+        public static final int dialpad_layout=0x7f090005;
         public static final int digits=0x7f090006;
         public static final int download=0x7f09000c;
         public static final int download_contact=0x7f090019;
@@ -177,6 +176,7 @@ containing a value of this type.
         public static final int handup=0x7f090008;
         public static final int index=0x7f090055;
         public static final int isupdate=0x7f090016;
+        public static final int keyboard=0x7f09000b;
         public static final int listview=0x7f09000e;
         public static final int main_left=0x7f09001f;
         public static final int main_right=0x7f090025;

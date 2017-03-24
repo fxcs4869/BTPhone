@@ -85,23 +85,6 @@ public class CallListAdapter extends BaseAdapter{
 			holder.ivType.setImageResource(R.drawable.icar_ic_ct_miss);
 		}
 		
-		/*if(bDeleteState){
-			holder.cbCheck.setVisibility(View.VISIBLE);
-			holder.cbCheck.setChecked(info.isbCheck());
-		}else{
-			holder.cbCheck.setVisibility(View.GONE);
-		}
-		
-		holder.cbCheck.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				SendMsg(mhandler,10, position);
-			}
-			
-		});*/
-		
 		holder.ivCall.setOnClickListener(new OnClickListener() {  
 			@Override
 			public void onClick(View v) {

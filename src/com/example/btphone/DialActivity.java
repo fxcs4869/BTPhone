@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.btphone.R;
-import com.nforetek.bt.aidl.NfHfpClientCall;
-import com.example.btphone.util.ContactsUtils;
 import com.example.btphone.util.PhoneBluth;
 
 import android.app.Activity;
@@ -30,7 +28,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.btphone.adpter.DialerListAdapter;
 import com.example.btphone.bean.ContactInfo;
@@ -74,12 +71,10 @@ public class DialActivity extends Activity {
 	Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;// 管理联系人的电话的Uri
 	String[] projection = { ContactsContract.CommonDataKinds.Phone._ID, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.DATA1, "sort_key",
 			ContactsContract.CommonDataKinds.Phone.CONTACT_ID, ContactsContract.CommonDataKinds.Phone.PHOTO_ID, ContactsContract.CommonDataKinds.Phone.LOOKUP_KEY };
-	private List<NfHfpClientCall> mCallList;
 	private PhoneBluth phonebluth = null;
 	private ArrayList<ContactInfo> showContactsList = new ArrayList<ContactInfo>(); // 在ListView显示的联系人列表
-	private ArrayList<ContactInfo> phoneList = new ArrayList<ContactInfo>();
-	private ArrayList<ContactInfo> btPhoneList = new ArrayList<ContactInfo>();
-	private ArrayList<ContactInfo> mAllContactsList = new ArrayList<ContactInfo>();
+	private ArrayList<ContactInfo> btPhoneList = new ArrayList<ContactInfo>(); //通过数据库查询得到的联系人
+	private ArrayList<ContactInfo> mAllContactsList = new ArrayList<ContactInfo>();//全体联系人
 	private DialActivity mCursorInterface;
 	private SQLiteDatabase phonebookdb;
 	private ContactQueryHandler asyncQueryHandler;
@@ -92,8 +87,8 @@ public class DialActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_dial);
 		Log.e(TAG, "++ onCreate() ++");
-		mContext = this;// 定义Context
 		initView();
+		mContext = this;// 定义Context
 		hand = handler;
 		phonebluth = PhoneBluth.getInstance(getApplicationContext()); // 初始化PhoneBluth
 		asyncQueryHandler = new ContactQueryHandler(getContentResolver(), DialActivity.this);// 初始化异步查询框架
@@ -103,9 +98,26 @@ public class DialActivity extends Activity {
 	@Override
 	protected void onResume() {
 		Log.e(TAG, "++ onResume()++");
-		handler.sendEmptyMessageDelayed(MSG_START_QUERY, 500); // 从数据库中查询
+		handler.sendEmptyMessageDelayed(MSG_START_QUERY, 500); // 从数据库中查询.?为什么要延迟
 		super.onResume();
 	}
+	@Override
+	protected void onPause() {
+		Log.e(TAG, "++ onPause()++");
+		super.onPause();
+	}
+	@Override
+	protected void onStop() {
+		Log.e(TAG, "++ onStop()++");
+		super.onStop();
+	}
+	@Override
+	protected void onDestroy() {
+		Log.e(TAG, "++ onDestroy()++");
+		super.onDestroy();
+	}
+	
+	
 
 	public static Handler hand = null;
 
@@ -400,14 +412,12 @@ public class DialActivity extends Activity {
 			updateInputNumber();
 		}
 
-		if (mCallList != null && mCallList.size() > 0) {
-			try {
-				Log.v(TAG, "mCommand.reqHfpSendDtmf(input);");
-				phonebluth.reqHfpSendDtmf(input); // DTMF多音双频信号
-													// 请求HFP连接远程设备发送DTMF
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		try {
+			Log.v(TAG, "mCommand.reqHfpSendDtmf(input);");
+			phonebluth.reqHfpSendDtmf(input); // DTMF多音双频信号
+												// 请求HFP连接远程设备发送DTMF
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -445,100 +455,12 @@ public class DialActivity extends Activity {
 			mCursorInterface = cursorInterface;
 		}
 
-		public Cursor doQuery(Uri uri, String[] projection, String selection, String[] selectionArgs, String orderBy, boolean async) {
-			if (async) {
-				// Get 100 results first, which is enough to allow the user to
-				// start scrolling,
-				// while still being very fast.
-				Uri limituri = uri.buildUpon().appendQueryParameter("limit", "100").build();
-				QueryArgs args = new QueryArgs();
-				args.uri = uri;
-				args.projection = projection;
-				args.selection = selection;
-				args.selectionArgs = selectionArgs;
-				args.orderBy = orderBy;
-
-				startQuery(0, args, limituri, projection, selection, selectionArgs, orderBy);
-				return null;
-			}
-			return ContactsUtils.query(mCursorInterface, uri, projection, selection, selectionArgs, orderBy);
-		}
-
 		@Override
 		protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
-			// Log.i("@@@", "query complete: " + cursor.getCount() + " " +
-			// mActivity);
-			// mCursorInterface.initCursor(cursor, cookie != null);
 			Log.d(TAG, "onQueryComplete() !!!!!!!!!!!!!!!!!!!!!:");
-			if (cursor != null && cursor.getCount() > 0) {//getCount()返回游标中的行数rows
-				try {
-					cursor.moveToFirst();
-					for (int i = 0; i < cursor.getCount(); i++) {
-						cursor.moveToPosition(i);
-						String name = cursor.getString(1);
-						String number = cursor.getString(2);
-						long contactId = cursor.getLong(4);
-						ContactInfo contactInfo = new ContactInfo();
-						contactInfo.setId(contactId);
-						contactInfo.setPhoneNum(number);
-						contactInfo.setName(name);
-						if (contactInfo.getName() == null) {
-							contactInfo.setName(contactInfo.getPhoneNum());
-						}
-						phoneList.add(contactInfo); //asyncQueryhandler 查询得到的结果
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-
-			showContactsList.addAll(phoneList);
-			mAllContactsList.addAll(phoneList);
 			btPhoneList = BtPhoneDB.queryAllPhoneName(phonebookdb, BtPhoneDB.PhoneBookTable);
 			if (btPhoneList != null) {
-
-				showContactsList.addAll(btPhoneList);
 				mAllContactsList.addAll(btPhoneList);
-			}
-
-			String content = num_field.getText().toString();
-			Log.v(TAG, "afterTextChanged(Editable s)  content=" + content);
-			if (content.length() > 0) {
-				ArrayList<ContactInfo> fileterList = (ArrayList<ContactInfo>) search(content);
-				Log.v(TAG, "fileterList.size()=" + fileterList.size());
-				showContactsList = fileterList;
-				for (ContactInfo cilist : showContactsList) {
-					Log.v(TAG, "cilist.getPhoneNum()=" + cilist.getPhoneNum());
-				}
-				if (showContactsList.size() > 0) {
-					lvDialerTiplist.setVisibility(View.VISIBLE);
-					// tvNewContact.setVisibility(View.GONE);
-					// tvUpdateContact.setVisibility(View.GONE);
-				} else {
-					lvDialerTiplist.setVisibility(View.GONE);
-					// tvNewContact.setVisibility(View.VISIBLE);
-					// tvUpdateContact.setVisibility(View.VISIBLE);
-				}
-				// mAdapter.updateData(mContacts);
-			} else {
-				lvDialerTiplist.setVisibility(View.GONE);
-				// tvNewContact.setVisibility(View.GONE);
-				// tvUpdateContact.setVisibility(View.GONE);
-
-				showContactsList = mAllContactsList;
-			}
-
-			lvDialerTiplist.setSelection(0);
-
-			Log.d(TAG, "onQueryComplete():alist.size=" + showContactsList.size());
-			// MyApplication ma = (MyApplication) getApplication();
-			// ma.setContactInfo(ciList);
-			updataAdapter();
-
-			if (token == 0 && cookie != null && cursor != null && cursor.getCount() >= 100) {
-				Log.d(TAG, "startQuery");
-				QueryArgs args = (QueryArgs) cookie;
-				startQuery(1, null, args.uri, args.projection, args.selection, args.selectionArgs, args.orderBy);
 			}
 		}
 	}
@@ -560,119 +482,5 @@ public class DialActivity extends Activity {
 		mAdapter.notifyDataSetChanged();
 	}
 
-	// private void inputCommand(String str) {
-	// int strleng = str.length();
-	// int fistFlagIndex = str.indexOf(COMMAND_FLAG_START); //
-	// 可返回某个指定的字符串值在字符串中首次出现的位置
-	// int lastFlagIndex = str.lastIndexOf(COMMAND_FLAG_END);
-	//
-	// Context c1 = null;
-	// try {
-	// c1 = getApplicationContext().createPackageContext(
-	// "com.wedesign.sourcemanager",
-	// Context.CONTEXT_IGNORE_SECURITY);
-	//
-	// } catch (NameNotFoundException e) {
-	// // TODO Auto-generated catch block
-	// e.printStackTrace();
-	// }
-	// // String project =SystemProperties.get("ro.pdi.project", "");
-	// SharedPreferences sh1 = c1.getSharedPreferences(
-	// "com.wedesign.sourcemanager", Context.MODE_WORLD_READABLE
-	// | Context.MODE_MULTI_PROCESS);
-	//
-	// // final boolean showFactory = sh.getBoolean("factoryMode", false);
-	//
-	// String project = sh1.getString("projectName", "");
-	// ;
-	// boolean haveCommand = false;
-	// Log.d("Btphone", "project = " + project);
-	// if (project != null && project.equals("fulljoin-pdi")) {
-	// TelephonyManager tm = (TelephonyManager) this
-	// .getSystemService(Context.TELEPHONY_SERVICE);
-	//
-	// if (str.equals(COMMAND_FULLJOIN_FACTORYTEST)) {
-	// haveCommand = true;
-	// startApk("com.charjack.factorytest",
-	// "com.charjack.factorytest.MainActivity");
-	// } else if (str.equals(COMMAND_FULLJOIN_ICCIDCODE)) {
-	// haveCommand = true;
-	// String ICCID = tm.getSimSerialNumber();
-	// warmingNoBluetoothConnect("ICCID:" + ICCID);
-	// } else if (str.equals(COMMAND_FULLJOIN_IMEICODE)) {
-	// haveCommand = true;
-	// String IMEI = tm.getDeviceId();
-	// warmingNoBluetoothConnect("IMEI:" + IMEI);
-	// } else if (str.equals(COMMAND_FULLJOIN_CREATUPC)) {
-	// haveCommand = true;
-	// startApk("com.fulljoin.com.warehouse",
-	// "com.fulljoin.com.warehouse.MainActivity");
-	// }
-	// }
-	// if ((strleng >= 8) && (fistFlagIndex == 0)
-	// && (lastFlagIndex == strleng - 4)) {
-	// if (str.equals(COMMAND_FLAG_START + COMMAND_SAFE_SETTINGS
-	// + COMMAND_FLAG_END)) {
-	// haveCommand = true;
-	// Log.d("Btphone", "sendBroadcast");
-	// Intent intent = new Intent("Wedesign.action.SAFE_SETTINGS");
-	// intent.putExtra("value", true);
-	// sendBroadcast(intent);
-	// CharSequence str1 = getString(R.string.open_safe_settings);
-	// Toast.makeText(getApplicationContext(), str1,
-	// Toast.LENGTH_SHORT).show();
-	// // 进入开发者模式
-	// } else if (str.equals(COMMAND_FLAG_START + COMMAND_DEVELOPMENT_MODE
-	// + COMMAND_FLAG_END)) {
-	// haveCommand = true;
-	// Log.d("Btphone", "sendBroadcast");
-	// Intent intent = new Intent(
-	// "Wedesign.action.DEVELOPMENT_PREF_SHOW");
-	// intent.putExtra("value", true);
-	// sendBroadcast(intent);
-	// CharSequence str1 = getString(R.string.into_development_mode);
-	// Toast.makeText(getApplicationContext(), str1,
-	// Toast.LENGTH_SHORT).show();
-	// // 进入工厂模式
-	// } else if (str.equals(COMMAND_FLAG_START + COMMAND_FACTORY_MODE
-	// + COMMAND_FLAG_END)) {
-	// haveCommand = true;
-	// Intent intent = new Intent("Wedesign.action.FACTORY_MODE_SHOW");
-	// intent.putExtra("value", true);
-	// sendBroadcast(intent);
-	//
-	// Log.d("Btphone", "Factory");
-	//
-	// } else if (str.equals(COMMAND_FLAG_START + COMMAND_SECURITY
-	// + COMMAND_FLAG_END)) {
-	// haveCommand = true;
-	// Log.d("Btphone", "Security");
-	// Context c = null;
-	// try {
-	// c = mContext.createPackageContext("com.wedesign.phone",
-	// Context.CONTEXT_IGNORE_SECURITY);
-	//
-	// } catch (NameNotFoundException e) {
-	// // TODO Auto-generated catch block
-	// e.printStackTrace();
-	// }
-	//
-	// SharedPreferences sh = c.getSharedPreferences(
-	// "com.wedesign.phone", Context.MODE_WORLD_READABLE
-	// | Context.MODE_MULTI_PROCESS);
-	// Editor editor = sh.edit();
-	// editor.putBoolean("security", true);
-	// editor.commit();
-	//
-	// }
-	//
-	// }
-	// if (haveCommand) {
-	// haveCommand = false;
-	// mDtmDigits.getText().clear();
-	// mDelete.setPressed(false);
-	// updataAdapter();
-	// }
-	// }
 
 }

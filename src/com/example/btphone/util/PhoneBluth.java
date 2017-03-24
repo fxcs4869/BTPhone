@@ -41,8 +41,6 @@ public class PhoneBluth {
 	private String hfp_connected_address;
 	private int hfp_state;
 	private String call_num;
-	private boolean isDownloadRange = false;
-	private int mDownloadRangeCount = 0;
 
 	public static Handler getHandler() {
 		return hand;
@@ -283,7 +281,6 @@ public class PhoneBluth {
 			// TODO Auto-generated method stub
 
 			Log.d(TAG, "onHfpAudioStateChanged()  prevState=" + prevState + "  newState=" + newState);
-			Handler handler1 = DialActivity.getHandler();
 			Handler handler2 = CallActivity.getHandler();
 			if (prevState == 140 & newState == 110 & handler2 != null) {// 蓝牙->手机听筒
 				handler2.sendMessage(handler2.obtainMessage(CallActivity.MSG_HFP_LOCAL));
@@ -337,6 +334,7 @@ public class PhoneBluth {
 			// call.getState() 去电3 接通0 挂断7 来电4
 			Handler handler1 = DialActivity.getHandler();
 			Handler handler2 = CallActivity.getHandler();
+			Log.d(TAG, "handler1=" + (handler1==null));
 			Log.d(TAG, "onHfpCallChanged()    call.getState()=" + call.getState());
 			switch (call.getState()) {
 			case 3: // 去电
@@ -384,11 +382,7 @@ public class PhoneBluth {
 		public void retPbapDownloadedContact(NfPbapContact contact) throws RemoteException {
 			// 这里初始下载的联系人(NfPbapContact
 			// contact)为一个名字带若干号码的，contact.getNumberArray()：获取号码的数组
-			Log.i(TAG, "retPbapDownloadedContact() ");
-			if (isDownloadRange) {
-				mDownloadRangeCount++;
-				Log.v(TAG, "Piggy Check download count: " + mDownloadRangeCount);
-			}
+			Log.d(TAG, "retPbapDownloadedContact() ");
 			sendHandlerMessageWithContact(ContactsActivity.HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST, "DATA_VCARD", contact);
 
 		}
@@ -441,34 +435,14 @@ public class PhoneBluth {
 			Log.v(TAG, "onPbapStateChanged() " + address + " state: " + prevState + "->" + newState + "reason=" + reason + "counts=" + counts);
 			Handler handler = ContactsActivity.getHandler();
 			Handler handler2 = CalllogActivity.getHandler();
-			if (newState == 110) { // 下载(联系人或通话记录)结束。必须sendMessage是因为修改view要在子线程中进行
-				Log.v(TAG, "handler.sendEmptyMessage");
-				if (handler2 == null) {
-					Log.v(TAG, "handler2==null");
-				} else {
-					Log.v(TAG, "handler2!=null");
-				}
-				// handler.sendEmptyMessage(ContactsActivity.HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE);
+			if (newState == 160) { // 下载(联系人或通话记录)开始。必须sendMessage是因为修改view要在子线程中进行
+				handler.sendEmptyMessage(ContactsActivity.HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_START);
 				handler2.sendEmptyMessage(CalllogActivity.HANDLER_DOWNLOAD_CALLLOG_DONE);
 			}
-
-			/*
-			 * String state = ""; switch (reason) {
-			 * 
-			 * case NfDef.REASON_DOWNLOAD_FULL_CONTENT_COMPLETED :
-			 * 
-			 * break; case NfDef.REASON_DOWNLOAD_FAILED : state = "Fail";
-			 * //hideTitle(); //type = 9; break; case
-			 * NfDef.REASON_DOWNLOAD_TIMEOUT : //enableButton(true); //state =
-			 * "Timeout"; //type = 9; //hideTitle(); break; default: if
-			 * (newState == NfDef.STATE_READY) { state = "Ready"; } else if
-			 * (newState == NfDef.STATE_DOWNLOADED) { state = "Update"; } else
-			 * if (newState == NfDef.STATE_CONNECTED) { state = "Downloading"; }
-			 * break;
-			 * 
-			 * }
-			 */
-
+			if (newState == 110) { // 下载(联系人或通话记录)结束。必须sendMessage是因为修改view要在子线程中进行
+				handler.sendEmptyMessage(ContactsActivity.HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE);
+				handler2.sendEmptyMessage(CalllogActivity.HANDLER_DOWNLOAD_CALLLOG_DONE);
+			}
 		}
 
 		@Override
@@ -486,10 +460,6 @@ public class PhoneBluth {
 
 	private void sendHandlerMessageWithContact(int what, String key, NfPbapContact value) {
 		Handler handler = ContactsActivity.getHandler();
-		if (handler == null) {
-			Log.e(TAG, "handler == null !");
-			return;
-		}
 		Message msg = Message.obtain(handler, what);
 		if (key != null && value != null) {
 			Bundle b = new Bundle();
