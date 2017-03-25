@@ -96,14 +96,6 @@ public class BtPhoneDB {
 
 	// search name with num 查询联系人
 	public static String queryPhoneName(SQLiteDatabase db, String Table_name, String Phone_num) {
-		// ��ѯ����α�
-		// ����1������
-		// ����2��Ҫ����ʾ����
-		// ����3��where�Ӿ�
-		// ����4��where�Ӿ��Ӧ������ֵ
-		// ����5�����鷽ʽ
-		// ����6��having����
-		// ����7������ʽ
 		String Phonename;
 		String Phonenum;
 		Cursor cursor = db.query("phonebook", new String[] { "phonename", "phonenumber" }, "phonenumber= ?", new String[] { Phone_num }, null, null, null); // "ORDEY BY ASC"

@@ -38,12 +38,6 @@ public class CalllogDetailActivity extends Activity {
 		Bundle bundle = intent.getExtras();
 		name = bundle.getString("name");
 		number = bundle.getString("number");
-
-		/*
-		 * Intent intent2 = new Intent( ‘› ±≤ª”√
-		 * "Wedesign.action.ACTION_MENU_VISIBLE");
-		 * mContext.sendBroadcast(intent2);
-		 */
 	}
 
 	@Override

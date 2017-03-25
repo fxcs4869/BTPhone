@@ -3,11 +3,11 @@ package com.example.btphone;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashSet;
 
 import com.example.btphone.adpter.CallListAdapter;
 import com.example.btphone.bean.CallInfo;
 import com.example.btphone.db.BtPhoneDB;
+import com.example.btphone.util.MyApplication;
 import com.example.btphone.util.PhoneBluth;
 import com.nforetek.bt.res.NfDef;
 
@@ -23,37 +23,33 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.AdapterView.OnItemClickListener;
 
-public class CalllogActivity extends Activity {  
+public class CalllogActivity extends Activity {
 
 	private static String TAG = "CalllogActivity";
 
 	private Button download;
 	private Button back;
 	private ListView listview;
-	private ArrayAdapter<String> arrayAdapter;
 	private static Context mContext;
 	public static String lastCallNumber = null;
 	private PhoneBluth phonebluth = null;
 	private SQLiteDatabase CallLogdb; // 通话记录的数据库
-	private ArrayList<CallInfo> AllCalllogList = new ArrayList<CallInfo>(); //所有的通话记录 
-	private ArrayList<CallInfo> showCalllogList = new ArrayList<CallInfo>(); //处理后的通话记录，同一个人的的汇总在一起
+	private ArrayList<CallInfo> AllCalllogList = new ArrayList<CallInfo>(); // 所有的通话记录
+	private ArrayList<CallInfo> showCalllogList = new ArrayList<CallInfo>(); // 处理后的通话记录，同一个人的的汇总在一起
 	private CallListAdapter mAdapter;
-	public static final int HANDLER_EVENT_ADD_VCARD_TO_BY_PASS_LIST = 9; //下载一条通话记录
+	public static final int HANDLER_EVENT_ADD_VCARD_TO_BY_PASS_LIST = 9; // 下载一条通话记录
 	public static final int HANDLER_EVENT_DIAL = 10;// 在通话记录界面拨打电话
-	public static final int HANDLER_DOWNLOAD_CALLLOG_START=11; //下载通话记录开始
-	public static final int HANDLER_DOWNLOAD_CALLLOG_DONE=12; //下载通话记录结束
+	public static final int HANDLER_DOWNLOAD_CALLLOG_DONE = 12; // 下载通话记录结束
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_calllog);
 		Log.e(TAG, "+++ onCreate() +++");
-		arrayAdapter = new ArrayAdapter<String>(this, R.layout.device_name);
 		initView();
 		hand = mHandler;
 		mContext = this;
@@ -70,9 +66,7 @@ public class CalllogActivity extends Activity {
 	public synchronized void onResume() {
 		super.onResume();
 		Log.e(TAG, "++onResume()++");
-		
 		initData();
-		
 	}
 
 	@Override
@@ -96,7 +90,7 @@ public class CalllogActivity extends Activity {
 		}
 		super.onDestroy();
 	}
-	 
+
 	public static Handler hand = null;
 
 	public static Handler getHandler() {
@@ -107,11 +101,12 @@ public class CalllogActivity extends Activity {
 		public void handleMessage(Message msg) {
 			Bundle bundle = msg.getData();
 			switch (msg.what) {
+
 			case HANDLER_EVENT_ADD_VCARD_TO_BY_PASS_LIST: // 每下载一条通话记录
 				int type = bundle.getInt("TYPE");
 				String name = bundle.getString("NAME");
 				String time = bundle.getString("TIME");
-				time=time.replace("T","");//去掉时间中的T,例如原时间为  20170227T143115
+				time = time.replace("T", "");// 去掉时间中的T,例如原时间为 20170227T143115
 				String number = bundle.getString("NUMBER");
 				CallInfo info = new CallInfo();
 				/* info.setDate(TimestamptoDate(0 + "")); */
@@ -121,11 +116,12 @@ public class CalllogActivity extends Activity {
 				info.setName(name);
 				addCallInfo(info);
 				break;
+				
 			case HANDLER_DOWNLOAD_CALLLOG_DONE: // 下载通话记录结束
 				Log.d(TAG, "HANDLER_DOWNLOAD_CALLLOG_DONE");
 				updataAdapter();
-				
 				break;
+				
 			case HANDLER_EVENT_DIAL: // 在通话记录界面拨打电话
 				String number2 = (String) msg.obj;
 				if (phonebluth != null)
@@ -144,17 +140,13 @@ public class CalllogActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				Log.v(TAG, "download onClicked");
-				if (AllCalllogList.size() != 0) { // 下载的前清除
-					AllCalllogList.clear();
-				}
-				// ShowDownloadingDlg(); 显示下载对话框，暂时关闭
+				AllCalllogList.clear();
+				MyApplication.load_ContactsOrCalllog=false;
 				BtPhoneDB.delete_table_data(CallLogdb, BtPhoneDB.CallLogTable); // 删除表数据
-				//BtPhoneDB.createTable(CallLogdb, BtPhoneDB.Sql_create_calllog_tab); // 创建表
-				try { 
+				try {
 					phonebluth.reqPbapDownload(NfDef.PBAP_STORAGE_CALL_LOGS);
 				} catch (Exception e) {
 					e.printStackTrace();
-					// enableButton(true);
 				}
 			}
 
@@ -169,8 +161,8 @@ public class CalllogActivity extends Activity {
 			}
 		});
 
-		listview.setOnItemClickListener(new OnItemClickListener() {  //点击具体item查看详细通话记录
-			
+		listview.setOnItemClickListener(new OnItemClickListener() { // 点击具体item查看详细通话记录
+
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				// TODO Auto-generated method stub
@@ -187,21 +179,18 @@ public class CalllogActivity extends Activity {
 		});
 	}
 
-	
-	private void initData() {  //因为通话记录数据量有限，应该无需用asyncQueryHandler
+	private void initData() { //从数据库中更新 因为通话记录数据量有限，应该无需用asyncQueryHandler
 		// TODO Auto-generated method stub
 		Log.d(TAG, "initData()");
 		String Phonename;
 		String Phonenum;
 		String time;
 		int type;
-		CallLogdb = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr); //获取数据库
-		BtPhoneDB.createTable(CallLogdb, BtPhoneDB.Sql_create_calllog_tab);  //创建表
-		
-		AllCalllogList.clear(); //因为初始化数据了，将这两个都清空
-
+		CallLogdb = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr); // 获取数据库
+		BtPhoneDB.createTable(CallLogdb, BtPhoneDB.Sql_create_calllog_tab); // 创建表
+		AllCalllogList.clear();
 		Cursor cursor = CallLogdb.query("calllog", new String[] { "phonename", "phonenumber", "time", "calltype" }, null, null, null, null, "time desc"); // "ORDEY BY ASC"
-
+		Log.d(TAG, "cursor.getCount()="+cursor.getCount());
 		while (cursor.moveToNext()) {
 			Phonenum = cursor.getString(cursor.getColumnIndex("phonenumber"));
 			Phonename = cursor.getString(cursor.getColumnIndex("phonename"));
@@ -214,11 +203,10 @@ public class CalllogActivity extends Activity {
 			callLog.setCallType(type);
 			AllCalllogList.add(callLog);
 		}
-		
 		updataAdapter();
 	}
-	public String TimestamptoDate(String time) { // 时间转换工具,以后再研究吧
 
+	public String TimestamptoDate(String time) { // 时间转换工具,以后再研究吧
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String re_StrTime = "未知";
 		long lcc_time = Long.valueOf(time);
@@ -244,40 +232,37 @@ public class CalllogActivity extends Activity {
 	private void addCallInfo(CallInfo info) {
 		Log.d(TAG, "addCallInfo(CallInfo info)");
 		String peoplename;
-		try {
-			peoplename = BtPhoneDB.queryPhoneName(CallLogdb, BtPhoneDB.PhoneBookTable, info.getPhoneNum());
-		} catch (Exception e) {
-			peoplename = info.getPhoneNum();
-		}
-
-		if (peoplename == null) {
-			peoplename = info.getPhoneNum();
-		}
-
-		info.setName(peoplename);
-
-		for (int i = 0; i < AllCalllogList.size(); i++) {
+		/*
+		 * try { peoplename = BtPhoneDB.queryPhoneName(CallLogdb,
+		 * BtPhoneDB.PhoneBookTable, info.getPhoneNum()); } catch (Exception e)
+		 * { peoplename = info.getPhoneNum(); }
+		 * 
+		 * if (peoplename == null) { peoplename = info.getPhoneNum(); }
+		 * 
+		 * info.setName(peoplename);
+		 */
+/*
+		for (int i = 0; i < AllCalllogList.size(); i++) {// 这是干啥？
 			CallInfo tmp = AllCalllogList.get(i);
 			if (tmp.getPhoneNum() == info.getPhoneNum()) {
 				AllCalllogList.remove(i);
 				break;
 			}
 		}
-
+*/
 		AllCalllogList.add(info);
-		//updataAdapter();  不用添加一条记录就更新一次通话记录吧,去掉它
-		Log.v(TAG, "info.getCallType()=" + info.getCallType() + "    info.getDate()=" + info.getDate());
-		if (CallLogdb != null) {
+		Log.v(TAG, "size=" + AllCalllogList.size()+"name=" + info.getName() + " num=" + info.getPhoneNum() + " Type=" + info.getCallType() + " Date=" + info.getDate());
+		//if (CallLogdb != null) {
 			BtPhoneDB.insert_calllog(CallLogdb, BtPhoneDB.CallLogTable, info.getName(), info.getPhoneNum(), info.getCallType(), info.getDate());
-		} else {
-			CallLogdb = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);
-			BtPhoneDB.createTable(CallLogdb, BtPhoneDB.Sql_create_calllog_tab);
-			BtPhoneDB.insert_calllog(CallLogdb, BtPhoneDB.CallLogTable, info.getName(), info.getPhoneNum(), info.getCallType(), info.getDate());
-			if (CallLogdb != null) {
-				CallLogdb.close(); // close database
-				CallLogdb = null;
-			}
-		}
+		//} else {
+		//	CallLogdb = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);
+		//	BtPhoneDB.createTable(CallLogdb, BtPhoneDB.Sql_create_calllog_tab);
+		//	BtPhoneDB.insert_calllog(CallLogdb, BtPhoneDB.CallLogTable, info.getName(), info.getPhoneNum(), info.getCallType(), info.getDate());
+		//	if (CallLogdb != null) {
+		//		CallLogdb.close(); // close database
+		//		CallLogdb = null;
+		//	}
+		//}
 
 	}
 
@@ -285,7 +270,6 @@ public class CalllogActivity extends Activity {
 		Log.d(TAG, "updataAdapter");
 		if (mAdapter == null) {
 			mAdapter = new CallListAdapter(mContext, mHandler);
-			// mListWithScrollBarView.getListView().setAdapter(mAdapter);
 		}
 		lastCallNumber = null;
 		showCalllogList = new ArrayList<CallInfo>();
@@ -297,9 +281,8 @@ public class CalllogActivity extends Activity {
 		boolean haveChange = false;
 
 		ArrayList<CallInfo> tmp = new ArrayList<CallInfo>(AllCalllogList);
-		Log.d(TAG, "CallList.size()="+AllCalllogList.size());
+		Log.d(TAG, "AllCalllogList.size()=" + AllCalllogList.size());
 
-        
 		if (tmp.size() != 0) {
 
 			for (; tmp.size() > 0;) {
@@ -341,7 +324,5 @@ public class CalllogActivity extends Activity {
 			// mListWithScrollBarView.setWarnShow();
 		}
 	}
-
-	
 
 }

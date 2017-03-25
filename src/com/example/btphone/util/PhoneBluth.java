@@ -392,8 +392,8 @@ public class PhoneBluth {
 		public void retPbapDownloadedCallLog(String address, String firstName, String middleName, String lastName, String number, int type, String timestamp) throws RemoteException {
 			// TODO Auto-generated method stub
 			String name = firstName + middleName + lastName;
-			if (name == "") { // 如果名字为" ",就设为“未知”
-				name = "未知";
+			if (name == "") { // 如果名字为" ",就设为电话号码
+				name = number;
 			}
 			Log.i(TAG, "retPbapDownloadedCallLog() " + "name=" + name + " (" + number + ") " + timestamp + "  type=" + type);
 			sendHandlerMessageWithCalllog(CalllogActivity.HANDLER_EVENT_ADD_VCARD_TO_BY_PASS_LIST, "TIME", timestamp, "NAME", name, "NUMBER", number, "TYPE", type);
@@ -435,13 +435,15 @@ public class PhoneBluth {
 			Log.v(TAG, "onPbapStateChanged() " + address + " state: " + prevState + "->" + newState + "reason=" + reason + "counts=" + counts);
 			Handler handler = ContactsActivity.getHandler();
 			Handler handler2 = CalllogActivity.getHandler();
-			if (newState == 160) { // 下载(联系人或通话记录)开始。必须sendMessage是因为修改view要在子线程中进行
-				handler.sendEmptyMessage(ContactsActivity.HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_START);
-				handler2.sendEmptyMessage(CalllogActivity.HANDLER_DOWNLOAD_CALLLOG_DONE);
-			}
-			if (newState == 110) { // 下载(联系人或通话记录)结束。必须sendMessage是因为修改view要在子线程中进行
-				handler.sendEmptyMessage(ContactsActivity.HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE);
-				handler2.sendEmptyMessage(CalllogActivity.HANDLER_DOWNLOAD_CALLLOG_DONE);
+			if (newState == 110) {
+				// 下载(联系人或通话记录,这里未进行区分)结束。必须sendMessage是因为修改view要在子线程中进行
+				if(MyApplication.load_ContactsOrCalllog){
+					handler.sendEmptyMessage(ContactsActivity.HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE);
+				}
+				else{
+					handler2.sendEmptyMessage(CalllogActivity.HANDLER_DOWNLOAD_CALLLOG_DONE);
+				}
+				
 			}
 		}
 

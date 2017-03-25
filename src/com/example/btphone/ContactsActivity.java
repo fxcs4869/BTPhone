@@ -64,7 +64,6 @@ public class ContactsActivity extends Activity {
 			ContactsContract.CommonDataKinds.Phone.CONTACT_ID, ContactsContract.CommonDataKinds.Phone.PHOTO_ID, ContactsContract.CommonDataKinds.Phone.LOOKUP_KEY };
 	public static final int HANDLER_EVENT_DIAL = 5;// 在通讯录界面拨打电话
 	public static final int HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST = 10;// 下载一条联系人信息
-	public static final int HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_START = 11; // 下载开始
 	public static final int HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE = 12; // 下载完成
 	private ContactsListAdapter mAdapter;
 	private Context mContext;
@@ -130,7 +129,7 @@ public class ContactsActivity extends Activity {
 
 	// 初始化数据，用异步查询框架 asyncQueryHandler 从数据库中将联系人信息取出来
 	private void initData() {
-		Log.v(TAG, "initData()");
+		Log.d(TAG, "initData()");
 		queryList.clear();
 		mAllContactsList.clear();
 		asyncQueryHandler = new ContactQueryHandler(getContentResolver(), ContactsActivity.this);
@@ -155,15 +154,6 @@ public class ContactsActivity extends Activity {
 				}
 				break;
 
-			case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_START: // 下载联系人开始
-				Log.v(TAG, "case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_START");
-				queryList.clear();
-				mAllContactsList.clear();
-				canQuery = false;// 下载联系人时不能进行查询
-				etSearch.setText("");
-				BtPhoneDB.delete_table_data(phonebookdb, BtPhoneDB.PhoneBookTable); // 删除表数据
-				break;
-
 			case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST: // 每下载一条联系人信息
 				NfPbapContact contact = (NfPbapContact) bundle.get("DATA_VCARD");
 				String[] numbers = contact.getNumberArray();
@@ -177,16 +167,17 @@ public class ContactsActivity extends Activity {
 						BtPhoneDB.insert_phonebook(phonebookdb, "phonebook", newcontact.getName(), newcontact.getPhoneNum());
 					}
 					mAllContactsList.add(newcontact);
-					Log.v(TAG, "name=" + newcontact.getName() );
+					Log.v(TAG, "name=" + newcontact.getName() +"mAllContactsList.size()="+mAllContactsList.size()+"queryList.size()="+queryList.size());
 				}
 				break;
 			case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE: // 下载联系人结束，更新Adapter
 				Log.v(TAG, "case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE");
 				canQuery = true;// 可以进行查询了
 				Collections.sort(mAllContactsList, pinyinComparator);// 第二个参数返回一个int型的值，就相当于一个标志，告诉sort方法按什么顺序来对list进行排序。
-				queryList.addAll(mAllContactsList);
-				MyApplication ma = (MyApplication) getApplication();
-				ma.setContactInfo(mAllContactsList);
+				//queryList.addAll(mAllContactsList);
+				//MyApplication ma = (MyApplication) getApplication();
+				//ma.setContactInfo(mAllContactsList);
+				Log.v(TAG, "queryList.size()="+queryList.size());
 				updataAdapter();
 				break;
 			}
@@ -213,6 +204,12 @@ public class ContactsActivity extends Activity {
 						 * Toast.makeText(getApplicationContext(), str,
 						 * Toast.LENGTH_SHORT) .show(); return; }
 						 */
+						MyApplication.load_ContactsOrCalllog=true;
+						queryList.clear();
+						mAllContactsList.clear();
+						canQuery = false;// 下载联系人时不能进行查询
+						etSearch.setText("");
+						BtPhoneDB.delete_table_data(phonebookdb, BtPhoneDB.PhoneBookTable); // 删除表数据
 						try {
 							phonebluth.reqPbapDownload(NfDef.PBAP_STORAGE_PHONE_MEMORY); // 开始下载
 						} catch (Exception e) {
@@ -267,6 +264,7 @@ public class ContactsActivity extends Activity {
 						queryList = fileterList;
 					} else { // 如果文本为空
 						queryList = mAllContactsList;
+						Log.v(TAG, "!!!!!!!!!!!!!!!!!!!!!");
 					}
 					updataAdapter();
 					listview.setSelection(0); // 将列表移动到指定的position
@@ -365,6 +363,7 @@ public class ContactsActivity extends Activity {
 		}
 		List<ContactInfo> ContactInfo = queryList;
 		// updateJSON();?
+		Log.v(TAG, "queryList.size()="+queryList.size());
 		mAdapter.setData(ContactInfo);
 		listview.setAdapter(mAdapter);
 	}
@@ -387,13 +386,15 @@ public class ContactsActivity extends Activity {
 
 		@Override
 		protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
+			
 			mAllContactsList = BtPhoneDB.queryAllPhoneName(phonebookdb, BtPhoneDB.PhoneBookTable);
+			Log.d(TAG, "onQueryComplete!!!!!!!!!!  mAllContactsList.size()="+mAllContactsList.size());
 			filledData(mAllContactsList);
 			// 根据a-z进行排序源数据
 			Collections.sort(mAllContactsList, pinyinComparator);
 			queryList = mAllContactsList;
-			MyApplication ma = (MyApplication) getApplication();// ?
-			ma.setContactInfo(queryList);
+			//MyApplication ma = (MyApplication) getApplication();// ?
+			//ma.setContactInfo(queryList);
 			updataAdapter();
 
 		}

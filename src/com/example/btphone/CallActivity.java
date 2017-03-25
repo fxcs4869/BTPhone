@@ -145,11 +145,13 @@ public class CallActivity extends Activity implements OnClickListener {
 	}
 
 	private void initData() {
+		Log.d(TAG, "initData()");
 		hand = handler;
 		phonebluth = PhoneBluth.getInstance(getApplicationContext()); // 初始化phonebluth
 		mDbDataBase = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);// 创建数据库
-		BtPhoneDB.createTable(mDbDataBase, BtPhoneDB.Sql_create_calllog_tab); // 创建表
+		//BtPhoneDB.createTable(mDbDataBase, BtPhoneDB.Sql_create_calllog_tab); // 创建表
 		peoplename = BtPhoneDB.queryPhoneName(mDbDataBase, BtPhoneDB.PhoneBookTable, number);
+		Log.d(TAG, "peoplename="+peoplename+"number="+number);
 		if (peoplename == null) { // 如果数据库中没有存该联系人，联系人的名字就用号码表示
 			peoplename = number;
 		}
