@@ -59,7 +59,12 @@
             android:textColor="@color/white"
             android:textSize="30.0sp"
             android:textStyle="normal" />
-
+        <Button
+            android:layout_width="343dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/back"
+            android:text="back"
+ />
 
     </LinearLayout>
 

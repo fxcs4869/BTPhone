@@ -1,16 +1,14 @@
 package com.example.btphone.db;
 
 import java.util.ArrayList;
-
 import com.example.btphone.bean.ContactInfo;
-
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 public class BtPhoneDB {
-	// calltype:
+
 	private static String mDbPath = "/data/data/com.example.btphone/BtPhone";
 	public static String Sql_create_phonebook_tab = "create table if not exists phonebook(_id integer primary key autoincrement,phonename text,phonenumber text)";
 	public static String Sql_create_calllog_tab = "create table if not exists calllog(_id integer primary key autoincrement,phonename text,phonenumber text,calltype integer,time text)";
@@ -56,25 +54,10 @@ public class BtPhoneDB {
 		db.update(Table_name, cValue, whereClause, whereArgs);
 	}
 
-	// 删除通讯录
+	// 删除联系人
 	public static void delete_phonebook(SQLiteDatabase db, String Table_name, String Phone_name, String Phone_num) {
-		// ʵ��������ֵ
-		ContentValues cValue = new ContentValues();
 		String[] args = { Phone_name, Phone_num };
 		db.delete(Table_name, "phonename=? and phonenumber=?", args);
-		//
-		// 删除SQL语句
-		// String sql = "delete from " + Table_name + " where phonename  = "
-		// + Phone_name + "and phonenumber = " + Phone_num;
-		//
-		// 01-01 03:13:50.790: E/AndroidRuntime(988):
-		// android.database.sqlite.SQLiteException: near "phonenumber": syntax
-		// error (code 1): , while compiling: delete from phonebook where
-		// phonename = 我的编号and phonenumber = +8618503080088
-
-		// 执行SQL语句
-		// db.execSQL(sql);
-
 	}
 
 	// insert call data to table 插入通话记录
@@ -87,50 +70,32 @@ public class BtPhoneDB {
 		db.insert(Table_name, null, cValue);
 	}
 
-	// 删除通话记录
+	// 删除指定的通话记录
 	public static void delete_calllog(SQLiteDatabase db, String Table_name, String Phone_name, String Phone_num, int calltype, String time) {
-		ContentValues cValue = new ContentValues();
-		String[] args = { Phone_name, Phone_num, calltype + "" };
+		String[] args = { Phone_name, Phone_num, "" + calltype };
 		db.delete(Table_name, "phonename=? and phonenumber=? and calltype=?", args);
 	}
 
-	// search name with num 查询联系人
+	// search name with num
 	public static String queryPhoneName(SQLiteDatabase db, String Table_name, String Phone_num) {
 		String Phonename;
-		String Phonenum;
 		Cursor cursor = db.query("phonebook", new String[] { "phonename", "phonenumber" }, "phonenumber= ?", new String[] { Phone_num }, null, null, null); // "ORDEY BY ASC"
-
-		int count = cursor.getCount();
-
 		while (cursor.moveToNext()) {
-			Phonenum = cursor.getString(cursor.getColumnIndex("phonenumber"));
-
 			Phonename = cursor.getString(cursor.getColumnIndex("phonename"));
 			return Phonename;
 		}
 
 		return null;
 	}
-
-	/**
-	 * @Title getUserListFromDatabases
-	 * @Description �����ݿ��еõ���ʷ��¼����Ϣ
-	 * @param sql
-	 * @param args
-	 * @return
-	 * @Return ArrayList<User> ��������
-	 * @Throws
-	 */
+	
 	// 查询所有电话联系人
 	public static ArrayList<ContactInfo> queryAllPhoneName(SQLiteDatabase db, String Table_name) {
 		ArrayList<ContactInfo> dataList = new ArrayList<ContactInfo>();
-		Log.d(TAG, "" + (db == null));
 		if (db == null) {
 			return null;
 		}
 		Cursor cursor = db.query("phonebook", new String[] { "phonename", "phonenumber" }, "", new String[] {}, null, null, null); // "ORDEY BY ASC"
 
-		int count = cursor.getCount();
 
 		while (cursor.moveToNext()) {
 			ContactInfo info = new ContactInfo();
@@ -141,22 +106,12 @@ public class BtPhoneDB {
 		return dataList;
 	}
 
-	// 查询所有通话记录
+	// 根据通话类型查询通话记录，暂时没有用到
 	public static void queryCallLog(SQLiteDatabase db, String CallType) {
-		// ��ѯ����α�
-		// ����1������
-		// ����2��Ҫ����ʾ����
-		// ����3��where�Ӿ�
-		// ����4��where�Ӿ��Ӧ������ֵ
-		// ����5�����鷽ʽ
-		// ����6��having����
-		// ����7������ʽ
 		String Phonename;
 		String Phonenum;
 		String time;
 		Cursor cursor = db.query("calllog", new String[] { "phonename", "phonenumber", "time" }, "calltype=?", new String[] { CallType }, null, null, null); // "ORDEY BY ASC"
-
-		int count = cursor.getCount();
 
 		while (cursor.moveToNext()) {
 			Phonenum = cursor.getString(cursor.getColumnIndex("phonenumber"));

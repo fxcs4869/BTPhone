@@ -15,11 +15,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.provider.Settings;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -41,7 +39,6 @@ public class CallActivity extends Activity implements OnClickListener {
 	private TextView mDtmDigits = null;
 	private String number;
 	private boolean isIncoming = false; // 是否是来电
-	private boolean hangUp = false;
 	private boolean isTaking = false; // 是否在通话过程中的标志位
 	private boolean mShowCallDial = false;// 是否显示了小键盘的标志位
 	private int callType = 5; // 通话类型 未接5 来电6 去电7 只用于通话记录（不同与电话类型）
@@ -74,7 +71,7 @@ public class CallActivity extends Activity implements OnClickListener {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_call);
-		Log.e(TAG, "+++ ON CREATE +++");
+		Log.e(TAG, "++onCreate()++");
 		Intent intent = getIntent();
 		Bundle bundle = intent.getExtras();
 		number = bundle.getString("number"); // 通话号码
@@ -149,9 +146,9 @@ public class CallActivity extends Activity implements OnClickListener {
 		hand = handler;
 		phonebluth = PhoneBluth.getInstance(getApplicationContext()); // 初始化phonebluth
 		mDbDataBase = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);// 创建数据库
-		//BtPhoneDB.createTable(mDbDataBase, BtPhoneDB.Sql_create_calllog_tab); // 创建表
+		BtPhoneDB.createTable(mDbDataBase, BtPhoneDB.Sql_create_calllog_tab); // 创建表
 		peoplename = BtPhoneDB.queryPhoneName(mDbDataBase, BtPhoneDB.PhoneBookTable, number);
-		Log.d(TAG, "peoplename="+peoplename+"number="+number);
+		Log.v(TAG, "peoplename="+peoplename+"number="+number);
 		if (peoplename == null) { // 如果数据库中没有存该联系人，联系人的名字就用号码表示
 			peoplename = number;
 		}

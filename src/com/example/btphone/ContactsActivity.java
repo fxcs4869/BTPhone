@@ -4,12 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.example.btphone.adpter.ContactsListAdapter;
 import com.example.btphone.bean.ContactInfo;
@@ -51,12 +47,10 @@ public class ContactsActivity extends Activity {
 	private static String TAG = "ContactsActivity";
 
 	private ImageButton btnDownload; // 下载联系人
-	private ImageButton btnNewContact; // 新建联系人
 	private Button back; // 返回
 	private CheckBox cbCheckbox; // 用于选择是否更新联系人
 	private ListView listview;
 	private EditText etSearch;
-	private ContactsActivity mCursorInterface;
 	private ArrayList<ContactInfo> queryList = new ArrayList<ContactInfo>(); // listview显示的list,会因输入的查询文本而变化
 	private ArrayList<ContactInfo> mAllContactsList = new ArrayList<ContactInfo>();// 所有的联系人，一般不会变化
 	Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;// 管理联系人的电话的Uri
@@ -132,7 +126,7 @@ public class ContactsActivity extends Activity {
 		Log.d(TAG, "initData()");
 		queryList.clear();
 		mAllContactsList.clear();
-		asyncQueryHandler = new ContactQueryHandler(getContentResolver(), ContactsActivity.this);
+		asyncQueryHandler = new ContactQueryHandler(getContentResolver());
 		asyncQueryHandler.startQuery(0, null, uri, projection, null, null, "sort_key COLLATE LOCALIZED asc");
 	}
 
@@ -167,17 +161,15 @@ public class ContactsActivity extends Activity {
 						BtPhoneDB.insert_phonebook(phonebookdb, "phonebook", newcontact.getName(), newcontact.getPhoneNum());
 					}
 					mAllContactsList.add(newcontact);
-					Log.v(TAG, "name=" + newcontact.getName() +"mAllContactsList.size()="+mAllContactsList.size()+"queryList.size()="+queryList.size());
+					Log.v(TAG, "name=" + newcontact.getName() + "mAllContactsList.size()=" + mAllContactsList.size() + "queryList.size()=" + queryList.size());
 				}
 				break;
 			case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE: // 下载联系人结束，更新Adapter
 				Log.v(TAG, "case HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE");
 				canQuery = true;// 可以进行查询了
 				Collections.sort(mAllContactsList, pinyinComparator);// 第二个参数返回一个int型的值，就相当于一个标志，告诉sort方法按什么顺序来对list进行排序。
-				//queryList.addAll(mAllContactsList);
-				//MyApplication ma = (MyApplication) getApplication();
-				//ma.setContactInfo(mAllContactsList);
-				Log.v(TAG, "queryList.size()="+queryList.size());
+				// queryList.addAll(mAllContactsList);
+				Log.v(TAG, "queryList.size()=" + queryList.size());
 				updataAdapter();
 				break;
 			}
@@ -186,7 +178,6 @@ public class ContactsActivity extends Activity {
 
 	private void initView() {
 
-		btnNewContact = (ImageButton) findViewById(R.id.add_contact);
 		listview = (ListView) findViewById(R.id.listview);
 		back = (Button) findViewById(R.id.back);
 		cbCheckbox = (CheckBox) findViewById(R.id.isupdate);
@@ -204,7 +195,7 @@ public class ContactsActivity extends Activity {
 						 * Toast.makeText(getApplicationContext(), str,
 						 * Toast.LENGTH_SHORT) .show(); return; }
 						 */
-						MyApplication.load_ContactsOrCalllog=true;
+						MyApplication.load_ContactsOrCalllog = true;
 						queryList.clear();
 						mAllContactsList.clear();
 						canQuery = false;// 下载联系人时不能进行查询
@@ -335,35 +326,13 @@ public class ContactsActivity extends Activity {
 		}
 	};
 
-	private void updateJSON() {
-		contactJsona = new JSONArray();
-		for (ContactInfo info : queryList) {
-			JSONObject object = new JSONObject();
-			JSONArray array = new JSONArray();
-			JSONObject arrayObject = new JSONObject();
-			try {
-				arrayObject.put("number", info.getPhoneNum());
-				arrayObject.put("flag", "");
-				array.put(arrayObject);
-				object.put("name", info.getName());
-				object.put("phone_info", array);
-				contactJsona.put(object);
-			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-	}
-
 	private void updataAdapter() {
 		Log.v(TAG, "updataAdapter()");
 		if (mAdapter == null) {
 			mAdapter = new ContactsListAdapter(mContext, mHandler);
 		}
 		List<ContactInfo> ContactInfo = queryList;
-		// updateJSON();?
-		Log.v(TAG, "queryList.size()="+queryList.size());
+		Log.v(TAG, "queryList.size()=" + queryList.size());
 		mAdapter.setData(ContactInfo);
 		listview.setAdapter(mAdapter);
 	}
@@ -371,74 +340,22 @@ public class ContactsActivity extends Activity {
 	private class ContactQueryHandler extends AsyncQueryHandler { // 异步查询框架
 		// token,一个令牌，主要用来标识查询,保证唯一即可.需要跟onXXXComplete方法传入的一致。（当然你也可以不一致，同样在数据库的操作结束后会调用对应的onXXXComplete方法?）
 		// cookie,你想传给onXXXComplete方法使用的一个对象。(没有的话传递null即可)
-		class QueryArgs {
-			public Uri uri;// （进行查询的通用资源标志符）:
-			public String[] projection;// 查询的列
-			public String selection;// 限制条件
-			public String[] selectionArgs;// 查询参数
-			public String orderBy;// 排序条件
-		}
 
-		public ContactQueryHandler(ContentResolver cr, ContactsActivity cursorInterface) {// 构造方法
+		public ContactQueryHandler(ContentResolver cr) {// 构造方法
 			super(cr);
-			mCursorInterface = cursorInterface;
 		}
 
 		@Override
 		protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
-			
+
 			mAllContactsList = BtPhoneDB.queryAllPhoneName(phonebookdb, BtPhoneDB.PhoneBookTable);
-			Log.d(TAG, "onQueryComplete!!!!!!!!!!  mAllContactsList.size()="+mAllContactsList.size());
-			filledData(mAllContactsList);
+			Log.d(TAG, "onQueryComplete!!!!  mAllContactsList.size()=" + mAllContactsList.size());
+			// filledData(mAllContactsList);
 			// 根据a-z进行排序源数据
 			Collections.sort(mAllContactsList, pinyinComparator);
 			queryList = mAllContactsList;
-			//MyApplication ma = (MyApplication) getApplication();// ?
-			//ma.setContactInfo(queryList);
 			updataAdapter();
-
 		}
-	}
-
-	/**
-	 * 为ListView填充数据
-	 * 
-	 * @param date
-	 * @return
-	 */
-	private void filledData(ArrayList<ContactInfo> data) {
-
-		for (int i = 0; i < data.size(); i++) {
-			ContactInfo info = data.get(i);
-			String pinyin = characterParser.getSelling(info.getName());
-			String sortString = pinyin.substring(0, 1).toUpperCase();
-
-			// 正则表达式，判断首字母是否是英文字母
-			// if(sortString.matches("[A-Z]")){
-			// info.setSortLetters(sortString.toUpperCase());
-			// }else{
-			// info.setSortLetters("#");
-			// }
-
-			if (sortString.matches("[A-Z]")) {
-				info.setSortLetters(sortString.toUpperCase());
-
-				String firstString = info.getName().substring(0, 1);
-				Pattern p = Pattern.compile("[a-zA-Z]");
-				Matcher m = p.matcher(firstString);
-				if (m.matches()) {
-					info.setbIsletter(true);
-				} else {
-					info.setbIsletter(false);
-				}
-			} else {
-				info.setSortLetters("#");
-				info.setbIsletter(false);
-			}
-
-			data.set(i, info);
-		}
-
 	}
 
 }

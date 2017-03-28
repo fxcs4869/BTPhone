@@ -25,8 +25,8 @@ import android.util.Log;
 public class PhoneBluth {
 	private static final String TAG = "PhoneBluth";
 	public static final int MSG_CURRENT_DEVICE_ADDR = 1124;
-	//public static String mCurrentConnectAddr = "38:BC:1A:BE:EE:16"; // 暂时先定死
-	public static String mCurrentConnectAddr =null;
+	// public static String mCurrentConnectAddr = "38:BC:1A:BE:EE:16"; // 暂时先定死
+	public static String mCurrentConnectAddr = null;
 	public static Handler hand;
 	private Context mContext;
 	private volatile static PhoneBluth instance = null; // volatile
@@ -38,9 +38,7 @@ public class PhoneBluth {
 			NfDef.PBAP_PROPERTY_MASK_TEL | NfDef.PBAP_PROPERTY_MASK_VERSION | NfDef.PBAP_PROPERTY_MASK_ADR | // address
 			NfDef.PBAP_PROPERTY_MASK_EMAIL | NfDef.PBAP_PROPERTY_MASK_PHOTO;
 	private static UiCommand mCommand = null;
-	private String hfp_connected_address;
 	private int hfp_state;
-	private String call_num;
 
 	public static Handler getHandler() {
 		return hand;
@@ -65,14 +63,14 @@ public class PhoneBluth {
 		return instance;
 	}
 
-	private void onCreate() {    //这个名字可以自取 
+	private void onCreate() { // 这个名字可以自取
 		Log.d(TAG, "onCreate()");
 		hand = mHandler;
 		mContext.bindService(new Intent("com.nforetek.bt.START_UI_SERVICE"), mConnection, Context.BIND_AUTO_CREATE);
 	}
 
 	public void reqHfpDialCall(String number) { // 拨打电话
-		Log.d(TAG, "reqHfpDialCall  number="+number);
+		Log.d(TAG, "reqHfpDialCall  number=" + number);
 		if (mCommand == null) {
 			return;
 		}
@@ -163,7 +161,7 @@ public class PhoneBluth {
 			return;
 		}
 		try {
-			mCommand.reqPbapDownload(hfp_connected_address, value, mProperty);
+			mCommand.reqPbapDownload(mCurrentConnectAddr, value, mProperty);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
@@ -174,7 +172,7 @@ public class PhoneBluth {
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 
-			case MSG_CURRENT_DEVICE_ADDR:  
+			case MSG_CURRENT_DEVICE_ADDR:
 				mCurrentConnectAddr = (String) msg.obj;
 				Log.d(TAG, "ADDR=" + mCurrentConnectAddr);
 				break;
@@ -201,19 +199,16 @@ public class PhoneBluth {
 			mCommand = UiCommand.Stub.asInterface(service);
 			if (mCommand == null) {
 				Log.e(TAG, "mCommand is null!!");
-			} 
+			}
 			try {
 				Log.e(TAG, "mCommand.registerHfpCallback(mCallbackHfp)");
 				mCommand.registerHfpCallback(mCallbackHfp); // 注册HfpCallback
 				mCommand.registerPbapCallback(mCallbackPbap);// 注册PbapCallback
-				hfp_connected_address = mCommand.getTargetAddress(); // 获取hfp_connected_address
-				if (hfp_connected_address.equals(NfDef.DEFAULT_ADDRESS)) {
+				mCurrentConnectAddr = mCommand.getTargetAddress(); // 获取蓝牙连接地址
+				if (mCurrentConnectAddr.equals(NfDef.DEFAULT_ADDRESS)) {
 				}
 				hfp_state = mCommand.getHfpConnectionState(); // 获取HfpConnectionState
 				mCommand.setPbapDownloadNotify(1); // 下载频率设置
-				if (call_num != null) {
-					mCommand.reqPbapDatabaseQueryNameByNumber(hfp_connected_address, call_num); // 这是想干啥？
-				}
 
 			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
@@ -247,10 +242,6 @@ public class PhoneBluth {
 			Handler handler = null;
 			if (newState == 140) {
 				DialActivity.bHfpState = true;
-				handler = DialActivity.getHandler();
-				if (handler != null)
-					handler.sendEmptyMessage(DialActivity.MSG_HFP_CONNECTED);
-				handler.sendEmptyMessageDelayed(DialActivity.MSG_CONTACT_DELAY, 500); // 这里设置了延时2s，才能点击打开联系人的功能
 			} else if (newState == 110) { // 这里设置了hfp没有连接时需要发送的消息，暂时不用
 
 				DialActivity.bBlueToothStatus = false;
@@ -334,7 +325,7 @@ public class PhoneBluth {
 			// call.getState() 去电3 接通0 挂断7 来电4
 			Handler handler1 = DialActivity.getHandler();
 			Handler handler2 = CallActivity.getHandler();
-			Log.d(TAG, "handler1=" + (handler1==null));
+			Log.d(TAG, "handler1=" + (handler1 == null));
 			Log.d(TAG, "onHfpCallChanged()    call.getState()=" + call.getState());
 			switch (call.getState()) {
 			case 3: // 去电
@@ -388,7 +379,7 @@ public class PhoneBluth {
 		}
 
 		@Override
-		// 每下载一条通话记录，调用一次,只用其中的名字，类型，时间，号码， 来电：6 去电：7 未接：5
+		// 每下载一条通话记录，调用一次,只用其中的名字，类型，时间，号码， 来电:6      去电:7       未接:5
 		public void retPbapDownloadedCallLog(String address, String firstName, String middleName, String lastName, String number, int type, String timestamp) throws RemoteException {
 			// TODO Auto-generated method stub
 			String name = firstName + middleName + lastName;
@@ -436,14 +427,13 @@ public class PhoneBluth {
 			Handler handler = ContactsActivity.getHandler();
 			Handler handler2 = CalllogActivity.getHandler();
 			if (newState == 110) {
-				// 下载(联系人或通话记录,这里未进行区分)结束。必须sendMessage是因为修改view要在子线程中进行
-				if(MyApplication.load_ContactsOrCalllog){
+				// 下载(联系人或通话记录,这里要进行区分)结束。必须sendMessage是因为修改view要在子线程中进行
+				if (MyApplication.load_ContactsOrCalllog) {
 					handler.sendEmptyMessage(ContactsActivity.HANDLER_EVENT_UPDATE_BY_PASS_VCARD_TO_LIST_DONE);
-				}
-				else{
+				} else {
 					handler2.sendEmptyMessage(CalllogActivity.HANDLER_DOWNLOAD_CALLLOG_DONE);
 				}
-				
+
 			}
 		}
 

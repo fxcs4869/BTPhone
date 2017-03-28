@@ -14,6 +14,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -22,6 +25,7 @@ public class CalllogDetailActivity extends Activity {
 	private TextView tvName;
 	private TextView tvNumber;
 	private ListView lvCallList;
+	private Button back;
 	private String name;
 	private String number;
 	private SQLiteDatabase CallLogdb;
@@ -55,9 +59,16 @@ public class CalllogDetailActivity extends Activity {
 		tvName = (TextView) findViewById(R.id.call_name);
 		tvNumber = (TextView) findViewById(R.id.call_number);
 		lvCallList = (ListView) findViewById(R.id.each_caller_list);
+		back=(Button)findViewById(R.id.back);
 		tvName.setText(name);
 		tvNumber.setText(number);
-
+		back.setOnClickListener(new OnClickListener(){
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				finish();
+			}
+		});
 	}
 
 	private void initData() {

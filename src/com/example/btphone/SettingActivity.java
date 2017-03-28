@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import com.nforetek.bt.aidl.UiCallbackBluetooth;
 import com.nforetek.bt.aidl.UiCommand;
 import com.example.btphone.R;
-import com.example.btphone.util.PhoneBluth;
 import com.nforetek.bt.res.NfDef;
 
 import android.annotation.SuppressLint;
@@ -24,8 +23,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -189,7 +186,7 @@ public class SettingActivity extends Activity {
 			try {
 				mCommand.registerBtCallback(mCallbackBluetooth);
 				mCommand.reqBtPairedDevices();
-				String adapterName = mCommand.getBtLocalName();
+				//String adapterName = mCommand.getBtLocalName();
 				Log.e(TAG, "nFore service version: " + mCommand.getNfServiceVersionName());
 				updateState(); // 更新标志状态
 
@@ -764,13 +761,6 @@ public class SettingActivity extends Activity {
 			}
 			String[] valueArray = new String[] { stateString, newState >= NfDef.STATE_CONNECTED ? address.substring(9, 17) : "00:00:00" };
 			sendHandlerMessage(HANDLER_EVENT_UPDATE_STATE_HFP, keyArray, valueArray);
-			//****************************************************************************
-			   //为了获取连接的address，传给数据库来创建，就在这里获取了
-						Handler handler1 = PhoneBluth.getHandler();
-						if(handler1!=null)
-							handler1.sendMessage(handler1.obtainMessage(PhoneBluth.MSG_CURRENT_DEVICE_ADDR,
-									address));
-      //****************************************************************************
 			keyArray = null;
 			valueArray = null;
 			
@@ -851,13 +841,6 @@ public class SettingActivity extends Activity {
 		}
 		try {
 			String hfpConnectedAddress = mCommand.getHfpConnectedAddress();
-			
-			//*****************************为了获取连接的address，传给数据库来创建，就在这里获取了
-			Handler handler1 = PhoneBluth.getHandler();
-			if(handler1!=null)
-				handler1.sendMessage(handler1.obtainMessage(PhoneBluth.MSG_CURRENT_DEVICE_ADDR,
-						hfpConnectedAddress));
-			//****************************************************************************
 			String a2dpConnectedAddress = mCommand.getA2dpConnectedAddress();
 			String avrcpConnectedAddress = mCommand.getAvrcpConnectedAddress();
 

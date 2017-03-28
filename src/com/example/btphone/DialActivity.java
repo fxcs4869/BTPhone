@@ -2,10 +2,8 @@ package com.example.btphone;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import com.example.btphone.R;
 import com.example.btphone.util.PhoneBluth;
-
 import android.app.Activity;
 import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
@@ -18,6 +16,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.ContactsContract;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -28,7 +27,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import com.example.btphone.adpter.DialerListAdapter;
 import com.example.btphone.bean.ContactInfo;
 import com.example.btphone.db.BtPhoneDB;
@@ -73,9 +71,8 @@ public class DialActivity extends Activity {
 			ContactsContract.CommonDataKinds.Phone.CONTACT_ID, ContactsContract.CommonDataKinds.Phone.PHOTO_ID, ContactsContract.CommonDataKinds.Phone.LOOKUP_KEY };
 	private PhoneBluth phonebluth = null;
 	private ArrayList<ContactInfo> showContactsList = new ArrayList<ContactInfo>(); // 在ListView显示的联系人列表
-	private ArrayList<ContactInfo> btPhoneList = new ArrayList<ContactInfo>(); //通过数据库查询得到的联系人
-	private ArrayList<ContactInfo> mAllContactsList = new ArrayList<ContactInfo>();//全体联系人
-	private DialActivity mCursorInterface;
+	private ArrayList<ContactInfo> btPhoneList = new ArrayList<ContactInfo>(); // 通过数据库查询得到的联系人
+	private ArrayList<ContactInfo> mAllContactsList = new ArrayList<ContactInfo>();// 全体联系人
 	private SQLiteDatabase phonebookdb;
 	private ContactQueryHandler asyncQueryHandler;
 	private DialerListAdapter mAdapter;
@@ -91,33 +88,34 @@ public class DialActivity extends Activity {
 		mContext = this;// 定义Context
 		hand = handler;
 		phonebluth = PhoneBluth.getInstance(getApplicationContext()); // 初始化PhoneBluth
-		asyncQueryHandler = new ContactQueryHandler(getContentResolver(), DialActivity.this);// 初始化异步查询框架
+		asyncQueryHandler = new ContactQueryHandler(getContentResolver());// 初始化异步查询框架
 
 	}
 
 	@Override
 	protected void onResume() {
 		Log.e(TAG, "++ onResume()++");
-		handler.sendEmptyMessageDelayed(MSG_START_QUERY, 500); // 从数据库中查询.?为什么要延迟
+		handler.sendEmptyMessageDelayed(MSG_START_QUERY, 500); // 从数据库中查询
 		super.onResume();
 	}
+
 	@Override
 	protected void onPause() {
 		Log.e(TAG, "++ onPause()++");
 		super.onPause();
 	}
+
 	@Override
 	protected void onStop() {
 		Log.e(TAG, "++ onStop()++");
 		super.onStop();
 	}
+
 	@Override
 	protected void onDestroy() {
 		Log.e(TAG, "++ onDestroy()++");
 		super.onDestroy();
 	}
-	
-	
 
 	public static Handler hand = null;
 
@@ -129,15 +127,6 @@ public class DialActivity extends Activity {
 		public void handleMessage(Message msg) {
 			Bundle b = msg.getData();
 			switch (msg.what) {
-			case MSG_HFP_CONNECTED: { // hfp连接
-				bHfpState = true;
-				button_contacts.setEnabled(false);
-			}
-				break;
-			case MSG_CONTACT_DELAY: {
-				button_contacts.setEnabled(true);
-			}
-				break;
 			case HANDLER_EVENT_UPDATE_INFO_INPUT:
 				num_field.setText(b.getString("INFO_INPUT"));
 				break;
@@ -159,8 +148,6 @@ public class DialActivity extends Activity {
 				break;
 			case MSG_START_QUERY: // 开始查询
 				phonebookdb = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);
-
-				// if not exsit then create the table
 				BtPhoneDB.createTable(phonebookdb, BtPhoneDB.Sql_create_phonebook_tab);
 				asyncQueryHandler.startQuery(0, null, uri, projection, null, null, "sort_key COLLATE LOCALIZED asc");
 				break;
@@ -282,7 +269,7 @@ public class DialActivity extends Activity {
 			public void onClick(View v) {
 				Log.v(TAG, "delete onClicked");
 				// if(hfp_state==NfDef.STATE_CONNECTED){
-				if (input_num.length() < 15 && input_num.length() > 0) {
+				if (input_num.length() < 16 && input_num.length() > 0) {
 					input_num = input_num.substring(0, input_num.length() - 1);
 				}
 				updateInputNumber(); // 更新输入的号码
@@ -316,10 +303,12 @@ public class DialActivity extends Activity {
 						startActivity(intent);
 					}
 				});
-		settings.setOnClickListener(new OnClickListener() { // 进入设置界面(暂时关闭)
+		settings.setOnClickListener(new OnClickListener() { // 进入设置界面
 			@Override
 			public void onClick(View v) {
 				Log.v(TAG, "button_setting onClicked");
+				Intent intent_settings = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
+				startActivity(intent_settings);
 			}
 		});
 
@@ -345,24 +334,14 @@ public class DialActivity extends Activity {
 							ArrayList<ContactInfo> fileterList = (ArrayList<ContactInfo>) search(content);
 							Log.v(TAG, "fileterList.size()=" + fileterList.size());
 							showContactsList = fileterList;
-							for (ContactInfo showcontacts : showContactsList) {
-								Log.v(TAG, "showcontacts.getPhoneNum()=" + showcontacts.getPhoneNum());
-							}
 							if (showContactsList.size() > 0) {
 								lvDialerTiplist.setVisibility(View.VISIBLE);
-								// tvNewContact.setVisibility(View.GONE);
-								// tvUpdateContact.setVisibility(View.GONE);
 							} else {
 								lvDialerTiplist.setVisibility(View.GONE);
-								// tvNewContact.setVisibility(View.VISIBLE);
-								// tvUpdateContact.setVisibility(View.VISIBLE);
 							}
 							updataAdapter();
 						} else {
 							lvDialerTiplist.setVisibility(View.GONE);
-							// tvNewContact.setVisibility(View.GONE);
-							// tvUpdateContact.setVisibility(View.GONE);
-
 						}
 						lvDialerTiplist.setSelection(0);
 					}
@@ -414,8 +393,8 @@ public class DialActivity extends Activity {
 
 		try {
 			Log.v(TAG, "mCommand.reqHfpSendDtmf(input);");
-			phonebluth.reqHfpSendDtmf(input); // DTMF多音双频信号
-												// 请求HFP连接远程设备发送DTMF
+			phonebluth.reqHfpSendDtmf(input); // DTMF多音双频信号,请求HFP连接远程设备发送DTMF
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -428,8 +407,8 @@ public class DialActivity extends Activity {
 
 	private void sendHandlerMessage(int what, String[] keys, String[] values) {
 		Log.v(TAG, "keys.length=" + keys.length + "values.length=" + values.length);
-		Message msg = Message.obtain(handler, what);// ? 或者也可以写为Message msg =
-													// handler.obtainMessage();
+		Message msg = Message.obtain(handler, what);// 或者也可以写为Message msg
+													// =handler.obtainMessage();
 		if (keys != null && values != null) {
 			Bundle b = new Bundle();
 			for (int i = 0; i < keys.length; i++) {
@@ -442,22 +421,13 @@ public class DialActivity extends Activity {
 
 	private class ContactQueryHandler extends AsyncQueryHandler { // 异步查询框架
 
-		class QueryArgs {
-			public Uri uri;
-			public String[] projection;
-			public String selection;
-			public String[] selectionArgs;
-			public String orderBy;
-		}
-
-		public ContactQueryHandler(ContentResolver cr, DialActivity cursorInterface) {
+		public ContactQueryHandler(ContentResolver cr) {
 			super(cr);
-			mCursorInterface = cursorInterface;
 		}
 
 		@Override
 		protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
-			Log.d(TAG, "onQueryComplete() !!!!!!!!!!!!!!!!!!!!!:");
+			Log.d(TAG, "onQueryComplete() ");
 			btPhoneList = BtPhoneDB.queryAllPhoneName(phonebookdb, BtPhoneDB.PhoneBookTable);
 			if (btPhoneList != null) {
 				mAllContactsList.addAll(btPhoneList);
@@ -481,6 +451,5 @@ public class DialActivity extends Activity {
 		lvDialerTiplist.setAdapter(mAdapter);
 		mAdapter.notifyDataSetChanged();
 	}
-
 
 }

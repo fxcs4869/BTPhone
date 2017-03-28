@@ -1,7 +1,5 @@
 package com.example.btphone;
 
-import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 import com.example.btphone.adpter.CallListAdapter;
@@ -31,7 +29,7 @@ public class CalllogActivity extends Activity {
 
 	private static String TAG = "CalllogActivity";
 
-	private Button download;
+	private Button download; 
 	private Button back;
 	private ListView listview;
 	private static Context mContext;
@@ -206,63 +204,14 @@ public class CalllogActivity extends Activity {
 		updataAdapter();
 	}
 
-	public String TimestamptoDate(String time) { // 时间转换工具,以后再研究吧
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String re_StrTime = "未知";
-		long lcc_time = Long.valueOf(time);
-		if (lcc_time == 0) {
-			return re_StrTime;
-		}
-
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd");
-		Date curDate = new Date(System.currentTimeMillis());
-		String today = formatter.format(curDate);
-
-		SimpleDateFormat sfd = new SimpleDateFormat("MM/dd,hh:mm");
-		re_StrTime = sfd.format(lcc_time);
-
-		if (today.equals(formatter.format(lcc_time))) {
-			SimpleDateFormat sfd1 = new SimpleDateFormat("今天,hh:mm");
-			re_StrTime = sfd1.format(lcc_time);
-		}
-		return re_StrTime;
-
-	}
+	
 
 	private void addCallInfo(CallInfo info) {
+		
 		Log.d(TAG, "addCallInfo(CallInfo info)");
-		String peoplename;
-		/*
-		 * try { peoplename = BtPhoneDB.queryPhoneName(CallLogdb,
-		 * BtPhoneDB.PhoneBookTable, info.getPhoneNum()); } catch (Exception e)
-		 * { peoplename = info.getPhoneNum(); }
-		 * 
-		 * if (peoplename == null) { peoplename = info.getPhoneNum(); }
-		 * 
-		 * info.setName(peoplename);
-		 */
-/*
-		for (int i = 0; i < AllCalllogList.size(); i++) {// 这是干啥？
-			CallInfo tmp = AllCalllogList.get(i);
-			if (tmp.getPhoneNum() == info.getPhoneNum()) {
-				AllCalllogList.remove(i);
-				break;
-			}
-		}
-*/
 		AllCalllogList.add(info);
 		Log.v(TAG, "size=" + AllCalllogList.size()+"name=" + info.getName() + " num=" + info.getPhoneNum() + " Type=" + info.getCallType() + " Date=" + info.getDate());
-		//if (CallLogdb != null) {
 			BtPhoneDB.insert_calllog(CallLogdb, BtPhoneDB.CallLogTable, info.getName(), info.getPhoneNum(), info.getCallType(), info.getDate());
-		//} else {
-		//	CallLogdb = BtPhoneDB.getPhoneBookDb(PhoneBluth.mCurrentConnectAddr);
-		//	BtPhoneDB.createTable(CallLogdb, BtPhoneDB.Sql_create_calllog_tab);
-		//	BtPhoneDB.insert_calllog(CallLogdb, BtPhoneDB.CallLogTable, info.getName(), info.getPhoneNum(), info.getCallType(), info.getDate());
-		//	if (CallLogdb != null) {
-		//		CallLogdb.close(); // close database
-		//		CallLogdb = null;
-		//	}
-		//}
 
 	}
 
@@ -275,8 +224,6 @@ public class CalllogActivity extends Activity {
 		showCalllogList = new ArrayList<CallInfo>();
 
 		CallInfo callInfo1 = null;
-		String tmpString1 = null;
-		String tmpString2 = null;
 		CallInfo callInfo2 = null;
 		boolean haveChange = false;
 

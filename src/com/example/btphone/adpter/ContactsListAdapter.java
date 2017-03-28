@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.btphone.ContactsActivity;
-import com.example.btphone.DialActivity;
 import com.example.btphone.R;
 import com.example.btphone.bean.ContactInfo;
 
 import android.content.Context;
-import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -20,7 +18,6 @@ import android.view.View.OnClickListener;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class ContactsListAdapter extends BaseAdapter {
 
@@ -28,7 +25,6 @@ public class ContactsListAdapter extends BaseAdapter {
 	private Context mContext;
 	private boolean bDeleteState = false;
 	private Handler mhandler;
-	private String TAG = " ContactsListAdapter";
 
 	public ContactsListAdapter(Context context, Handler mhandler) {
 		// TODO Auto-generated constructor stub
